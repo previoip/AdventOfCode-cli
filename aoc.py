@@ -1,4 +1,4 @@
-import argparse, os, re, importlib
+import argparse, os, re, importlib, json
 from inspect import getsourcefile
 from importlib import import_module
 
@@ -10,7 +10,7 @@ def main():
     cfd = os.path.abspath(getsourcefile(lambda:0) + '/..')
 
     parser = argparse.ArgumentParser(prog='aoc',
-                                    description='A Command Line Interface for AOC Scripts bootstrapper-ish'
+                                    description='A Command Line Interface for managing Advent Of Code. python.'
                                     )
 
     parser.add_argument('-d',
@@ -25,12 +25,7 @@ def main():
                         action='store',
                         default=1,
                         choices=[1,2],
-                        help='Run puzzle on specified part'
-                        )
-
-    parser.add_argument('-t', '--test',
-                        action='store_true',
-                        help='Run on test inputs'
+                        help='Run puzzle on specified part. default: part 1'
                         )
 
     parser.add_argument('-y', 
@@ -40,19 +35,29 @@ def main():
                         default=setYear,
                         help='run specified puzzle script based on year published, default will be the most current year.')
 
-    parser.add_argument('-c', '--create',
+    parser.add_argument('--test',
+                        action='store_true',
+                        help='Run on test inputs'
+                        )
+
+    parser.add_argument('--create',
                        action='store_true',
-                       help='create new script instances with this program boilerplate, if year is not specified it will create instance in latest event')
+                       help='create new script instances with from a pre-made boilerplate, if year is not specified it will create instance in most current year.')
+
+    # parser.add_argument('--open',
+    #                     action='store_true',
+    #                     help='open in text editor on specified day (or latest if not specified). To choose which text editor program, please configure the config.json '
+    #                     )
 
     parser.add_argument('-v',
                        '--verbose',
                        action='store_true',
-                       help='not quite the verbose you might expect, but it\'ll show full outputs of the script.')
+                       help='not quite ye-verbose-output, but this option enable full outputs printouts.')
 
     args = parser.parse_args()
 
-    if args.d < 0:
-        print('Err: arg DAY cannot be negative.')
+    if args.d < 0 or args.y < 0:
+        print('Err: arg DAY/YEAR cannot be negative.')
         return
 
     if not args.y:
@@ -60,7 +65,7 @@ def main():
         return
 
     if args.y <= 2015 or args.y > 2035:
-        print('Err: arg YEAR is probably out of expected bounds.')
+        print('Err: arg YEAR is probably out of expected bounds. (>2035???)')
         return 
     
     dirScripts = cfd + '/scripts/' + str(args.y)
@@ -68,8 +73,8 @@ def main():
 
     if args.create:
         fileUtil.createNewPuzzleInstance(dirScripts, '__init__', 'py')
-        fileUtil.createNewPuzzleInstance(dirScripts, 'day', 'py')
-        fileUtil.createNewPuzzleInstance(dirDatasets, 'day', 'txt')
+        fileUtil.createNewPuzzleInstance(dirScripts, 'day', 'py', args.d) # todo: args.d doenst work, fix
+        fileUtil.createNewPuzzleInstance(dirDatasets, 'day', 'txt', args.d) # todo: args.d doenst work, fix
         return
 
     else:
@@ -103,27 +108,33 @@ def main():
         with open(cfd + '/datasets/' + str(args.y) + '/day' + str(convArg['d']) + '.txt', 'r') as filehandle:
             tempstr = filehandle.read()
             filehandle.close()
-        pattern = r"(?:(\-\-\-test\:\n)((?:.*?\r?\n?)*)(\-\-\-data:))" if args.test else r"(?:(\-\-\-data\:\n)((?:.*?\r?\n?)*)(\-\-\-end))"
+        pattern = r"(?:(\-\-\-test_)((?:.*?\r?\n?)*)(\-\-\-end))" if args.test else r"(?:(\-\-\-mainData\n)((?:.*?\r?\n?)*)(\-\-\-end))"
         matches = re.finditer(pattern, tempstr, re.MULTILINE)
-        tempstr = ''
+        tempData = []
         for match in matches:
-            tempstr += match.group(2)
+            tempData.append(match.group(2))
 
-        if not tempstr:
-            print('no data is present in txt')
+        if not tempData:
+            print('no data string is present')
             return
 
         print('importing and running script...')
+        """
         try:
             mod = import_module('scripts.{}.day{}'.format(convArg['y'], convArg['d']))
         except ModuleNotFoundError:
             print('Err: scripts cannot be loaded for some reason')
             return
+        """
+        mod = import_module('scripts.{}.day{}'.format(convArg['y'], convArg['d']))
 
-        prog = mod.Puzzle(args.verbose)
-        prog.appendData(tempstr)
-        prog.run(convArg['p'])
-        print('Answer: %s' % (prog.getResult()))
+        for ind, datum in enumerate(tempData):
+            if args.test: print('Running on dataset: %d' % (ind))
+            prog = mod.Puzzle(args.verbose)
+            prog.appendData(datum.strip())
+            prog.run(convArg['p'])
+            res = prog.getResult()
+            print('\nAnswer: %s' % (res if res else 'returns None, puzzle is not yet completed.'))
 
 
     # print(vars(args))

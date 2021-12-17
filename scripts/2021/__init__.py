@@ -1,18 +1,18 @@
 class Puzzle:
 
+    def part1(self):
+        return None
+
+    def part2(self):
+        return None
+
     def __init__(self, verbose):
         self.data = None
         self.cache = None
         self.verbose = verbose
 
     def appendData(self, data):
-        self.data = data
-
-    def part1(self):
-        return None
-
-    def part2(self):
-        return None
+        self.data = data.splitlines()
 
     def run(self, part):
         if part == 1:
@@ -25,6 +25,8 @@ class Puzzle:
 
     def dump(self):
         print('Dumping result')
+        print(self.data)
+        print(self.result)
         return
 
     def getResult(self):
