@@ -9,6 +9,11 @@ def main():
     setYear = 2021
     cfd = os.path.abspath(getsourcefile(lambda:0) + '/..')
 
+    tempComp = {}
+
+    with open(cfd + '/comp.json') as filehandle:
+        tempComp = json.load(filehandle)
+    
     parser = argparse.ArgumentParser(prog='aoc',
                                     description='A Command Line Interface for managing Advent Of Code. python.'
                                     )
@@ -135,8 +140,18 @@ def main():
             prog.run(convArg['p'])
             res = prog.getResult()
             print('\nAnswer: %s' % (res if res else 'returns None, puzzle is not yet completed.'))
+    
+    if str(convArg['y']) not in tempComp:
+        tempComp[str(convArg['y'])] = {}
+    if str(convArg['d']) not in tempComp[str(convArg['y'])]:
+        tempComp[str(convArg['y'])][str(convArg['d'])] = {}
+    if str(convArg['p']) not in tempComp[str(convArg['y'])][str(convArg['d'])]:
+        tempComp[str(convArg['y'])][str(convArg['d'])][str(convArg['p'])] = {}
 
-
+    tempComp[str(convArg['y'])][str(convArg['d'])][str(convArg['p'])] = True if res else False
+    
+    with open(cfd + '/comp.json', 'w') as filehandle:
+        filehandle.write(json.dumps(tempComp, indent=2))
     # print(vars(args))
 
 

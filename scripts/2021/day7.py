@@ -2,6 +2,7 @@ class Puzzle:
 
     # main funcs
     def part1(self):
+        return None
         maxPos = max(self.data)
         minPos = min(self.data)
         print(minPos, maxPos)
