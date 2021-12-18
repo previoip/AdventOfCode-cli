@@ -1,20 +1,7 @@
 ---test_
-datastr1
-datastr3
-datastr5
----end
-
----test_
-datastr2
-datastr4
-datastr6
+target area: x=20..30, y=-10..-5
 ---end
 
 ---mainData
-maindatastr1
-maindatastr2
-maindatastr3
-maindatastr4
-maindatastr5
-maindatastr6
+target area: x=236..262, y=-78..-58
 ---end

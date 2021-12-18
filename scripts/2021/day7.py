@@ -2,13 +2,29 @@ class Puzzle:
 
     # main funcs
     def part1(self):
-        return None
+        maxPos = max(self.data)
+        minPos = min(self.data)
+        print(minPos, maxPos)
+        fuelCosts = 0
+        fuelCost = 0
+        lowest = 1e19
+        for est in range(minPos, maxPos):
+            for currentPos in self.data:
+                currentCost = 0
+                for i in range(abs(est - currentPos)):
+                    currentCost += 1
+                print(currentCost)
+                fuelCosts += currentCost
+            if(fuelCost < lowest):
+                lowest = fuelCost
+            fuelCosts = 0
+        return lowest
 
     def part2(self):
         return None
 
     def appendData(self, data):
-        self.data = data.splitlines()
+        self.data = [int(i) for i in data.split(',')]
 
     def dump(self):
         print('Dumping result')
