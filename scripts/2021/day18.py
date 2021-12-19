@@ -13,7 +13,7 @@ class Puzzle:
     def part1(self):
         snails = self.Snails([1,2])
         snails.addItem([3,4])
-        return snails.getRes()
+        return None
 
     def part2(self):
         return None

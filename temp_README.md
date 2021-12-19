@@ -37,28 +37,3 @@ tested on python 3.8.5, clone or download this whole repo under the branch `main
   ```sh
   python aoc.py -h
   ```
-
-### Stats
-
-#### 2021 
-
-| Days  | Stars |
-| ----  | ----- |
-| 1  |  **  |
-| 2  |  **  |
-| 3  |      |
-| 4  |  **  |
-| 5  |  **  |
-| 6  |  *   |
-| 7  |      |
-| 8  |      |
-| 9  |      |
-| 10  |      |
-| 11  |      |
-| 12  |      |
-| 13  |      |
-| 14  |      |
-| 15  |      |
-| 16  |      |
-| 17  |      |
-| 18  |      |

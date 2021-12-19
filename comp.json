@@ -1,58 +1,96 @@
 {
+  "_name": "year",
   "2021": {
+    "_name": "day",
     "1": {
+      "_name": "part",
+      "2": true,
       "1": true
-    },
-    "12": {
-      "1": false
-    },
-    "3": {
-      "1": false
     },
     "2": {
-      "1": true
+      "_name": "part",
+      "1": true,
+      "2": true
+    },
+    "3": {
+      "_name": "part",
+      "1": false,
+      "2": false
     },
     "4": {
-      "1": true
+      "_name": "part",
+      "1": true,
+      "2": true
     },
     "5": {
-      "1": true
+      "_name": "part",
+      "1": true,
+      "2": true
     },
     "6": {
-      "1": true
+      "_name": "part",
+      "1": true,
+      "2": false
     },
     "7": {
-      "1": false
+      "_name": "part",
+      "1": false,
+      "2": false
     },
     "8": {
-      "1": false
+      "_name": "part",
+      "1": false,
+      "2": false
     },
     "9": {
-      "1": false
+      "_name": "part",
+      "1": false,
+      "2": false
     },
     "10": {
-      "1": false
+      "_name": "part",
+      "1": false,
+      "2": false
     },
     "11": {
-      "1": false
+      "_name": "part",
+      "1": false,
+      "2": false
+    },
+    "12": {
+      "_name": "part",
+      "1": false,
+      "2": false
     },
     "13": {
-      "1": false
+      "_name": "part",
+      "1": false,
+      "2": false
     },
     "14": {
-      "1": false
+      "_name": "part",
+      "1": false,
+      "2": false
     },
     "15": {
-      "1": false
+      "_name": "part",
+      "1": false,
+      "2": false
     },
     "16": {
-      "1": false
+      "_name": "part",
+      "1": false,
+      "2": false
     },
     "17": {
-      "1": false
+      "_name": "part",
+      "1": false,
+      "2": false
     },
     "18": {
-      "1": true
+      "_name": "part",
+      "1": false,
+      "2": false
     }
   }
 }

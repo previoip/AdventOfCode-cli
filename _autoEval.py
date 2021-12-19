@@ -31,13 +31,13 @@ def directEval(year, day, part):
         res = prog.getResult()
 
     if str(year) not in tempComp:
+        tempComp["_name"] = "year"
         tempComp[str(year)] = {}
-    if str(year) not in tempComp[str(year)]:
+    if str(day) not in tempComp[str(year)]:
+        tempComp[str(year)]["_name"] = "day"
         tempComp[str(year)][str(day)] = {}
-    if str(part) not in tempComp[str(year)][str(day)]:
-        tempComp[str(year)][str(day)][str(part)] = {}
 
-    
+    tempComp[str(year)][str(day)]["_name"] = "part"
     tempComp[str(year)][str(day)][str(part)] = True if res else False
     
     with open(cfd + '/comp.json', 'w') as filehandle:
@@ -46,6 +46,11 @@ def directEval(year, day, part):
 def main():
     cfd = os.path.abspath(getsourcefile(lambda:0) + '/..')
 
+
+    with open(cfd + '/comp.json') as filehandle:
+        tempComp = json.load(filehandle)
+    
+
     dirDef = cfd + '/scripts/'
     listYear = os.listdir(dirDef)
 
@@ -53,9 +58,9 @@ def main():
         dirScripts = cfd + '/scripts/' + str(year)
         exclude = ['__pycache__', '__init__.py']
         listScripts = sorted([i for i in os.listdir(dirScripts) if i not in exclude])
-        python_exec = 'py'
+        # python_exec = 'py'
         for day, scr in enumerate(listScripts):
-            temp = '%s aoc.py -y %s -d %s -p %s' % (python_exec, year, day+1, 1)
+            # temp = '%s aoc.py -y %s -d %s -p %s' % (python_exec, year, day+1, 1)
             directEval(year, day+1, 1)
             directEval(year, day+1, 2)
     
