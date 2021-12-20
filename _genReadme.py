@@ -41,6 +41,7 @@ def main():
                         row.append( "| %s  | %s%s |" % (index, ' *' if part1 else '  ', '* ' if part2 else '  '))
                     except KeyError:
                         row.append( "|     |     |" )
+                        pass
                 table += ' '.join(row)
                 table += "\n"
             table += "\n"

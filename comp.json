@@ -34,23 +34,23 @@
     },
     "7": {
       "_name": "part",
-      "1": false,
-      "2": false
+      "1": true,
+      "2": true
     },
     "8": {
       "_name": "part",
-      "1": false,
+      "1": true,
       "2": false
     },
     "9": {
       "_name": "part",
-      "1": false,
-      "2": false
+      "1": true,
+      "2": true
     },
     "10": {
       "_name": "part",
-      "1": false,
-      "2": false
+      "1": true,
+      "2": true
     },
     "11": {
       "_name": "part",
@@ -88,6 +88,16 @@
       "2": false
     },
     "18": {
+      "_name": "part",
+      "1": false,
+      "2": false
+    },
+    "19": {
+      "1": false,
+      "_name": "part",
+      "2": false
+    },
+    "20": {
       "_name": "part",
       "1": false,
       "2": false

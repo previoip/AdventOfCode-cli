@@ -11,7 +11,7 @@ class Puzzle:
         self.data = data.splitlines()
 
     def dump(self):
-        print('Dumping result')
+        print('Dumping...')
         print(self.data)
         print(self.result)
         return

@@ -1,12 +1,16 @@
 class Puzzle:
 
+    def removeSubstr(setString, subsetString):
+        returnString = setString
+        for letter in subsetString:
+            returnString = returnString.replace(letter, '')
+        return returnString
     # main funcs
+
     def part1(self):
-        return None
         maxPos = max(self.data)
         minPos = min(self.data)
-        print(minPos, maxPos)
-        fuelCosts = 0
+        # print(minPos, maxPos)
         fuelCost = 0
         lowest = 1e19
         for est in range(minPos, maxPos):
@@ -14,15 +18,33 @@ class Puzzle:
                 currentCost = 0
                 for i in range(abs(est - currentPos)):
                     currentCost += 1
-                print(currentCost)
-                fuelCosts += currentCost
+                fuelCost += currentCost
+                if self.verbose: print(fuelCost)
+
+            if(fuelCost < lowest):
+                lowest = fuelCost
+            fuelCosts = 0
+        print(lowest)
+        return lowest
+
+    def part2(self):
+        return None # nope
+        maxPos = max(self.data)
+        minPos = min(self.data)
+        # print(minPos, maxPos)
+        fuelCost = 0
+        lowest = 1e19
+        for est in range(minPos, maxPos):
+            for currentPos in self.data:
+                currentCost = 0
+                for i in range(abs(est - currentPos)):
+                    currentCost += i+1
+                # print(currentCost)
+                fuelCost += currentCost
             if(fuelCost < lowest):
                 lowest = fuelCost
             fuelCosts = 0
         return lowest
-
-    def part2(self):
-        return None
 
     def appendData(self, data):
         self.data = [int(i) for i in data.split(',')]
