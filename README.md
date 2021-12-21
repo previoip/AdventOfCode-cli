@@ -53,5 +53,5 @@ tested on python 3.8.5, clone or download this whole repo under the branch `main
 | 7  |  **  | | 17  |      | |     |     |
 | 8  |  *   | | 18  |      | |     |     |
 | 9  |  **  | | 19  |      | |     |     |
-| 10  |  **  | | 20  |      | |     |     |
+| 10  |  **  | | 20  |  *   | |     |     |
 
