@@ -139,22 +139,23 @@ def main():
             prog.appendData(datum.strip())
             prog.run(convArg['p'])
             res = prog.getResult()
-            print('\nAnswer: %s' % (res if res else 'returns None, puzzle is not yet completed.'))
-    
-    (year, day, part) = (convArg['y'], convArg['d'], convArg['p'])
-    if str(year) not in tempComp:
-        tempComp["_name"] = "year"
-        tempComp[str(year)] = {}
-    if str(day) not in tempComp[str(year)]:
-        tempComp[str(year)]["_name"] = "day"
-        tempComp[str(year)][str(day)] = {}
+            if not convArg['t']: print('\nAnswer: %s' % (res if res else 'returns None, puzzle is not yet completed.'))
 
-    tempComp[str(year)][str(day)]["_name"] = "part"
-    tempComp[str(year)][str(day)][str(part)] = True if res else False
-    
-    with open(cfd + '/comp.json', 'w') as filehandle:
-        filehandle.write(json.dumps(tempComp, indent=2))
-    # print(vars(args))
+    if not convArg['t']:
+        (year, day, part) = (convArg['y'], convArg['d'], convArg['p'])
+        if str(year) not in tempComp:
+            tempComp["_name"] = "year"
+            tempComp[str(year)] = {}
+        if str(day) not in tempComp[str(year)]:
+            tempComp[str(year)]["_name"] = "day"
+            tempComp[str(year)][str(day)] = {}
+
+        tempComp[str(year)][str(day)]["_name"] = "part"
+        tempComp[str(year)][str(day)][str(part)] = True if res else False
+
+        with open(cfd + '/comp.json', 'w') as filehandle:
+            filehandle.write(json.dumps(tempComp, indent=2))
+# print(vars(args))
 
 
 if __name__ == '__main__':
