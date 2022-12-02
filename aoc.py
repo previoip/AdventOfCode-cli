@@ -1,4 +1,4 @@
-import argparse, os, re, importlib, json
+import argparse, os, re, importlib, json, datetime
 from inspect import getsourcefile
 from importlib import import_module
 
@@ -6,7 +6,7 @@ from utils import fileUtil
 
 def main():
 
-    setYear = 2021
+    setYear = datetime.date.today().year
     cfd = os.path.abspath(getsourcefile(lambda:0) + '/..')
 
     tempComp = {}
