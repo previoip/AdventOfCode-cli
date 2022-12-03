@@ -1,6 +1,5 @@
 class Puzzle:
 
-    # main funcs
     def part1(self):
         return None
 
@@ -8,13 +7,8 @@ class Puzzle:
         return None
 
     def appendData(self, data):
+        # data preprocessor
         self.data = data.splitlines()
-
-    def dump(self):
-        print('Dumping...')
-        print(self.data)
-        print(self.result)
-        return
 
     # defaults
     def __init__(self, verbose):
@@ -31,9 +25,14 @@ class Puzzle:
         if self.verbose:
             self.dump()
 
+    def dump(self):
+        print('Dumping...')
+        print(self.data)
+        print(self.result)
+        return
+
     def getResult(self):
         return self.result
 
 if __name__ == "__main__":
-    print("this shouldn't be ran as standalone script")
     pass

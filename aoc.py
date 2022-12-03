@@ -90,9 +90,6 @@ def main():
             print('no script/dataset present')
             return
 
-        # print(listDatasets, listScripts)
-        # print(len(listDatasets), len(listScripts))
-
         convArg = {'y': args.y, 'd': args.d if args.d > 0 else len(listScripts)-1, 'p': args.p, 't': args.test}
         
 
@@ -104,10 +101,6 @@ def main():
 
 
         print('\n----- Advent Of Code %s, Day %d part %d %s-----\n' % (convArg['y'], convArg['d'], convArg['p'], 'using test variable. ' if convArg['t'] else ''))
-        # print(convArg)
-        # print(currPath)
-        
-        ## main func
         print('fetching local data...')
         tempstr = ''
         with open(cfd + '/datasets/' + str(args.y) + '/day' + str(convArg['d']) + '.txt', 'r') as filehandle:
@@ -124,13 +117,6 @@ def main():
             return
 
         print('importing and running script...')
-        """
-        try:
-            mod = import_module('scripts.{}.day{}'.format(convArg['y'], convArg['d']))
-        except ModuleNotFoundError:
-            print('Err: scripts cannot be loaded for some reason')
-            return
-        """
         mod = import_module('scripts.{}.day{}'.format(convArg['y'], convArg['d']))
 
         for ind, datum in enumerate(tempData):
@@ -139,7 +125,10 @@ def main():
             prog.appendData(datum.strip())
             prog.run(convArg['p'])
             res = prog.getResult()
-            if not convArg['t']: print('\nAnswer: %s' % (res if res else 'returns None, puzzle is not yet completed.'))
+
+            print()
+            if convArg['t']: print('Test ', end='')
+            print('Answer: %s' % (res if res else 'returns None, puzzle is not yet completed.'))
 
     if not convArg['t']:
         (year, day, part) = (convArg['y'], convArg['d'], convArg['p'])

@@ -63,7 +63,7 @@ tested on python 3.8.5, clone or download this whole repo under the branch `main
 | :-:  | :---: |
 |  1   |  **   |
 |  2   |  **   |
-|  3   |       |
+|  3   |  **   |
 |  4   |       |
 |  5   |       |
 |  6   |       |
