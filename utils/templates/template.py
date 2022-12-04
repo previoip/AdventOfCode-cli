@@ -17,10 +17,10 @@ class Puzzle:
         self.verbose = verbose
 
     def run(self, part):
-        if part == 1:
-            self.result = self.part1()
-        else:
+        if part == 2:
             self.result = self.part2()
+        else:
+            self.result = self.part1()
 
         if self.verbose:
             self.dump()
