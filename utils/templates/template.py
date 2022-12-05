@@ -15,6 +15,7 @@ class Puzzle:
         self.data = None
         self.cache = None
         self.verbose = verbose
+        self.stripData = True
 
     def run(self, part):
         if part == 2:

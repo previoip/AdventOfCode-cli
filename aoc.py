@@ -122,7 +122,12 @@ def main():
         for ind, datum in enumerate(tempData):
             if args.test: print('Running on dataset: %d' % (ind))
             prog = mod.Puzzle(args.verbose)
-            prog.appendData(datum.strip())
+
+            if hasattr(mod.Puzzle, 'stripData') and mod.Puzzle.stripData:
+                prog.appendData(datum.strip())
+            else:
+                prog.appendData(datum)
+
             prog.run(convArg['p'])
             res = prog.getResult()
 
