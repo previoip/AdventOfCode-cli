@@ -61,7 +61,7 @@ tested on python 3.8.5, clone or download this whole repo under the branch `main
 
 | Day  | Stars | | Day  | Stars |
 | :-:  | :---: |-| :-:  | :---: |
-|  1   |  **   | |  11  |       |
+|  1   |  **   | |  11  |  **   |
 |  2   |  **   | |  12  |       |
 |  3   |  **   | |  13  |       |
 |  4   |  **   | |  14  |       |
