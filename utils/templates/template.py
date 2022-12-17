@@ -8,7 +8,7 @@ class Puzzle:
 
     def appendData(self, data):
         # data preprocessor
-        self.data = data.splitlines()
+        self.data = [i for i in data.splitlines() if i]
 
     # defaults
     def __init__(self, verbose):

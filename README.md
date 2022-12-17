@@ -64,7 +64,7 @@ tested on python 3.8.5, clone or download this whole repo under the branch `main
 |  1   |  **   | |  11  |  **   |
 |  2   |  **   | |  12  |       |
 |  3   |  **   | |  13  |       |
-|  4   |  **   | |  14  |       |
+|  4   |  **   | |  14  |  *    |
 |  5   |  **   | |  15  |       |
 |  6   |  **   | |  16  |       |
 |  7   |  **   | |  17  |       |

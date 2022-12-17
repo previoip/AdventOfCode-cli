@@ -38,9 +38,7 @@ class Monkey:
                 worry_level = worry_level // self.worry_denominator
             worry_level_remainder = worry_level
             if self.verbose: print(f'{self.name} put down item and you relieved as your blood tension went down to {worry_level}.')
-
-            if item:
-                worry_level_remainder = worry_level_remainder % (self.modulo_divisors)
+            worry_level_remainder = worry_level_remainder % self.modulo_divisors
 
 
             fucker = None
