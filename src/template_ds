@@ -1,0 +1,20 @@
+[Ans]
+foo
+bar
+baz
+
+[Test:example 1]
+foo
+bar
+baz
+
+
+[Ans]
+foo
+bar
+baz
+
+[Test:example 2]
+foo
+bar
+blargh
