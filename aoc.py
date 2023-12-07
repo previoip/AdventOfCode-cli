@@ -4,6 +4,7 @@ import sys
 import shutil
 import argparse
 import importlib.util
+import traceback
 from importlib import reload as importlib_reload
 from datetime import datetime
 from re import compile as re_compile
@@ -105,9 +106,9 @@ class AOCArgNamespace:
       raise Exception('day argument is invalid')
 
   def to_dirpath(self, base_dir):
-    fp = os.path.join(base_dir, str(self.year), str(self.day))
-    fp = os.path.realpath(fp)
-    return fp
+    fd = os.path.join(base_dir, str(self.year), str(self.day))
+    fd = os.path.realpath(fd)
+    return fd
 
   def __repr__(self):
     return 'year {} day {} part {}'.format(self.year, self.day, self.part)
@@ -186,50 +187,59 @@ if __name__ == '__main__':
       if args.command == AOCCommandOpt.new:
         if not invoke_confirm('creating new puzzle:', 'Year {}'.format(args.year), 'Day {}'.format(args.day)):
           continue
-        fp = args.to_dirpath(AOCConfig.paths.base_folder)
-        if ProgUtil.ensure_dir(fp):
-          raise FileExistsError('puzzle already exists:', fp)
-        os.makedirs(fp)
+        fd = args.to_dirpath(AOCConfig.paths.base_folder)
+        if ProgUtil.ensure_dir(fd):
+          raise FileExistsError('puzzle already exists:', fd)
+        os.makedirs(fd)
 
         with open(AOCConfig.paths.template_prog_filepath, 'rb') as fo:
-          with open(os.path.join(fp, AOCConfig.paths.puzzle_filename), 'w', encoding='utf8') as fo2:
+          with open(os.path.join(fd, AOCConfig.paths.puzzle_filename), 'w', encoding='utf8') as fo2:
             fo2.write(fo.read().decode('utf8'))
           test_ds_content = fo.read()
         with open(AOCConfig.paths.template_ds_filepath, 'rb') as fo:
           test_ds_content = fo.read()
-        with open(os.path.join(fp, AOCConfig.paths.input_part1_filename), 'w', encoding='utf8', newline='\n'):
+        with open(os.path.join(fd, AOCConfig.paths.input_part1_filename), 'w', encoding='utf8', newline='\n'):
           pass
-        with open(os.path.join(fp, AOCConfig.paths.input_part2_filename), 'w', encoding='utf8', newline='\n'):
+        with open(os.path.join(fd, AOCConfig.paths.input_part2_filename), 'w', encoding='utf8', newline='\n'):
           pass
-        with open(os.path.join(fp, AOCConfig.paths.test_part1_filename), 'w', encoding='utf8', newline='\n') as fo:
+        with open(os.path.join(fd, AOCConfig.paths.test_part1_filename), 'w', encoding='utf8', newline='\n') as fo:
           fo.write(test_ds_content.decode('utf8'))
-        with open(os.path.join(fp, AOCConfig.paths.test_part2_filename), 'w', encoding='utf8', newline='\n') as fo:
+        with open(os.path.join(fd, AOCConfig.paths.test_part2_filename), 'w', encoding='utf8', newline='\n') as fo:
           fo.write(test_ds_content.decode('utf8'))
 
       elif args.command == AOCCommandOpt.test or args.command == AOCCommandOpt.eval:
         print('performing {}(s) on puzzle:'.format(args.command), args)
-        f_dir = args.to_dirpath(AOCConfig.paths.base_folder)
-        fp = os.path.join(f_dir, AOCConfig.paths.puzzle_filename)
-        assert ProgUtil.ensure_file(fp)
-        ProgUtil.force_hot_reload('src.aoc_base_class')
-        puzzle_mod = lazy_import('aoc', fp)
-        puzzle_instance = puzzle_mod.AOC(base_dir=f_dir)
+        fd = args.to_dirpath(AOCConfig.paths.base_folder)
+        fp = os.path.join(fd, AOCConfig.paths.puzzle_filename)
+        if not ProgUtil.ensure_file(fp):
+          raise FileNotFoundError('file not found:', fp)
 
-        ...
+        ProgUtil.force_hot_reload('src.aoc_base_class')
+        puzzle_module = ProgUtil.lazy_import('aoc', fp)
+        puzzle_instance = puzzle_module.AOC(base_dir=fd)
+
+        print()
+        for puzzle_name, puzzle_ans, puzzle_solution, puzzle_parser in puzzle_instance._run(run_as=args.command, part=args.part):
+          print('evaluating', puzzle_name)
+          ret = puzzle_solution(puzzle_parser) 
+          print('result:', ret)
+          print()
 
         del puzzle_instance
-        del puzzle_mod
+        del puzzle_module
+
+        print('puzzle {} finished:'.format(args.command), args)
 
       elif args.command == AOCCommandOpt.delete:
         if not invoke_confirm('deleting puzzle:', 'Year {}'.format(args.year), 'Day {}'.format(args.day)):
           continue
-        fp = args.to_dirpath(AOCConfig.paths.base_folder)
-        if not ProgUtil.ensure_dir(fp):
-          raise FileNotFoundError('puzzle does not exist:', fp)
-        shutil.rmtree(fp)
+        fd = args.to_dirpath(AOCConfig.paths.base_folder)
+        if not ProgUtil.ensure_dir(fd):
+          raise FileNotFoundError('puzzle does not exist:', fd)
+        shutil.rmtree(fd)
 
-    except Exception as e:
-      print('', e, sep='\n')
+    except Exception:
+      print('', traceback.format_exc(), '', sep='\n')
       continue
     counter += 1
 
