@@ -6,7 +6,7 @@ from io import IOBase, BytesIO
 from os import PathLike
 from re import compile as re_compile
 
-_re_test_tag_fetch = re_compile(rb'\[(Test|Ans) .+\]\B\n')
+_re_test_tag_fetch = re_compile(rb'\[(Test|Ans).*\]\B\n')
 
 class AOCRunAsEnum:
   eval = 'eval'
@@ -39,7 +39,7 @@ class AOCBaseClass:
 
     for n, match in enumerate(tag_matches):
       start_cursor, end_cursor = match.span()
-      tag = bytes_all[start_cursor:end_cursor].decode(self.default_encoding).strip()[6:-1]
+      tag = bytes_all[start_cursor:end_cursor].decode(self.default_encoding).strip()
       if n + 1 == count:
         bytes_content = bytes_all[end_cursor:]
       else:
@@ -63,7 +63,7 @@ class AOCBaseClass:
   def solution_part_2(self, parsed_input) -> t.Any:
     raise NotImplementedError('puzzle part 2 is not yet implemented')
 
-  def _run(self, run_as:AOCRunAsEnum=AOCRunAsEnum.test, part=1) -> t.Generator[t.Tuple[str, t.Callable, t.Callable], None, None]:
+  def _run(self, run_as:AOCRunAsEnum=AOCRunAsEnum.test, part=1) -> t.Generator[t.Tuple[str, str, t.Callable, t.Callable], None, None]:
     if not (run_as != AOCRunAsEnum.eval or run_as != AOCRunAsEnum.test):
       raise ValueError('run_as arg is invalid: {}'.format(run_as))
     callable_sol = getattr(self, 'solution_part_{}'.format(part), None)
@@ -76,9 +76,16 @@ class AOCBaseClass:
 
     buf = self.loader(part=part, run_as=run_as)
 
+
     if run_as == AOCRunAsEnum.eval:
-      yield 'eval', callable_sol, functools.partial(callable_parser, buf)
+      yield 'eval', None, callable_sol, callable_parser(buf)
 
     elif run_as == AOCRunAsEnum.test:
-      for test_name, trunc_buf in self.tests_unloader(buf):
-        yield test_name, callable_sol, functools.partial(callable_parser, trunc_buf)
+      test_it = list(self.tests_unloader(buf))
+      ans = None
+      for test_name, trunc_buf in test_it:
+        if test_name == '[Ans]':
+          ans = trunc_buf
+          continue
+        yield test_name, ans, callable_sol, callable_parser(trunc_buf)
+        ans = None
