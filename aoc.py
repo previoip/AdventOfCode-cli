@@ -12,6 +12,59 @@ from src.state import AOCStateManager
 
 REGEXP_SPECIAL_CHAR = re_compile(r'[^a-zA-Z0-9\s]')
 
+class AOCConfig:
+  day  = 1
+  year = datetime.now().year
+
+  class paths:
+    base_folder = './puzzles'
+    template_prog_filepath = './src/template_prog'
+    template_ds_filepath = './src/template_ds'
+    state_filename = './state'
+    puzzle_filename = 'puzzle.py'
+    test_part1_filename = 'test_p1.txt'
+    test_part2_filename = 'test_p2.txt'
+    input_part1_filename = 'input_p1.txt'
+    input_part2_filename = 'input_p2.txt'
+
+
+class AOCCommandOpt:
+  clear   = 'clear'
+  help    = 'help'
+  new     = 'new'
+  delete  = 'delete'
+  test    = 'test'
+  eval    = 'eval'
+  exit    = 'exit'
+
+
+def print_motd():
+  print("""
+
+▄▄▄      ▓█████▄  ██▒   █▓▓█████  ███▄    █ ▄▄▄█████▓
+▒████▄    ▒██▀ ██▌▓██░   █▒▓█   ▀  ██ ▀█   █ ▓  ██▒ ▓▒
+▒██  ▀█▄  ░██   █▌ ▓██  █▒░▒███   ▓██  ▀█ ██▒▒ ▓██░ ▒░
+░██▄▄▄▄██ ░▓█▄   ▌  ▒██ █░░▒▓█  ▄ ▓██▒  ▐▌██▒░ ▓██▓ ░
+ ▓█   ▓██▒░▒████▓    ▒▀█░  ░▒████▒▒██░   ▓██░  ▒██▒ ░
+ ▒▒   ▓▒█░ ▒▒▓  ▒    ░ ▐░  ░░ ▒░ ░░ ▒░   ▒ ▒   ▒ ░░
+  ░   ▒    ░ ░  ░   ▒█████    █████▒     ░ ░   ░
+      ░  ░   ░      ▒██▒  ██▒▓██   ▒       ░
+           ░        ▒██░  ██▒▒████ ░
+                    ▒██   ██░░▓█▒  ░
+                    ░ ████▓▒░░▒█░
+                    ░ ▒░▒░▒░  ▒ ░
+          ▄████▄   ▒█████  ▓█████▄ ▓█████
+          ▒██▀ ▀█  ▒██▒  ██▒▒██▀ ██▌▓█   ▀
+          ▒▓█    ▄ ▒██░  ██▒░██   █▌▒███
+          ▒▓▓▄ ▄██▒▒██   ██░░▓█▄   ▌▒▓█  ▄
+          ▒ ▓███▀ ░░ ████▓▒░░▒████▓ ░▒████▒
+          ░ ░▒ ▒  ░░ ▒░▒░▒░  ▒▒▓  ▒ ░░ ▒░ ░
+            ░  ▒     ░ ▒ ▒░  ░ ▒  ▒  ░ ░  ░
+          ░        ░ ░ ░ ▒   ░ ░  ░    ░
+          ░ ░          ░ ░     ░       ░  ░
+          ░                  ░
+""")
+
 def invoke_confirm(*message) -> bool:
   print()
   if message:
@@ -37,33 +90,6 @@ class ErrorCatchingArgumentParser(argparse.ArgumentParser):
 
   def error(self, message):
     self.exit(status=2, message='error: %s\n' % message)
-
-# namespaces
-
-class AOCConfig:
-  day  = 1
-  year = datetime.now().year
-
-  class paths:
-    base_folder = './puzzles'
-    template_prog_filepath = './src/template_prog'
-    template_ds_filepath = './src/template_ds'
-    state_filename = './state'
-    puzzle_filename = 'puzzle.py'
-    test_part1_filename = 'test_p1.txt'
-    test_part2_filename = 'test_p2.txt'
-    input_part1_filename = 'input_p1.txt'
-    input_part2_filename = 'input_p2.txt'
-
-
-class AOCCommandOpt:
-  clear   = 'cls'
-  help    = 'help'
-  new     = 'new'
-  delete  = 'delete'
-  test    = 'test'
-  eval    = 'eval'
-  exit    = 'exit'
 
 
 class ProgUtil:
@@ -131,10 +157,13 @@ def parser_build():
   parser.add_argument('year', type=int)
   parser.add_argument('day', type=int)
   parser.add_argument('-p', '--part', type=int, dest='part', choices=[1, 2], default=1)
+  parser.add_argument('-f', '--flag', type=str, dest='flag', choices=['idle', 'pass', 'fail'], default='idle')
   return parser
 
 
 def program_inits(*args, **kwargs):
+  print_motd()
+
   if not ProgUtil.ensure_dir(AOCConfig.paths.base_folder):
     print('creating new folder:', AOCConfig.paths.base_folder)
     os.makedirs(AOCConfig.paths.base_folder)
@@ -182,8 +211,6 @@ if __name__ == '__main__':
       parser.parse_args(argv, namespace=args)
       args.assert_args()
 
-      print(args)
-
       if args.command == AOCCommandOpt.new:
         if not invoke_confirm('creating new puzzle:', 'Year {}'.format(args.year), 'Day {}'.format(args.day)):
           continue
@@ -208,27 +235,38 @@ if __name__ == '__main__':
           fo.write(test_ds_content.decode('utf8'))
 
       elif args.command == AOCCommandOpt.test or args.command == AOCCommandOpt.eval:
-        print('performing {}(s) on puzzle:'.format(args.command), args)
+        print('==v==', 'performing {}(s) on puzzle:'.format(args.command), args, '==v==')
         fd = args.to_dirpath(AOCConfig.paths.base_folder)
         fp = os.path.join(fd, AOCConfig.paths.puzzle_filename)
         if not ProgUtil.ensure_file(fp):
           raise FileNotFoundError('file not found:', fp)
 
         ProgUtil.force_hot_reload('src.aoc_base_class')
+
         puzzle_module = ProgUtil.lazy_import('aoc', fp)
         puzzle_instance = puzzle_module.AOC(base_dir=fd)
 
         print()
         for puzzle_name, puzzle_ans, puzzle_solution, puzzle_parser in puzzle_instance._run(run_as=args.command, part=args.part):
-          print('evaluating', puzzle_name)
+          print('evaluating', puzzle_name, end=' ')
+
           ret = puzzle_solution(puzzle_parser) 
-          print('result:', ret)
+
+          if args.command == AOCCommandOpt.test:
+            puzzle_ans = puzzle_instance.process_test_answer(puzzle_ans)
+            res = ret == puzzle_ans
+            print('->', 'passed' if res else 'try again, expected result:\n{}'.format(puzzle_ans))
+
+          else:
+            print('result: ', res)
+            print('please check the answer within the website input form.')
+
           print()
 
         del puzzle_instance
         del puzzle_module
 
-        print('puzzle {} finished:'.format(args.command), args)
+        print('==^==', 'puzzle {} finished:'.format(args.command), args, '==^==')
 
       elif args.command == AOCCommandOpt.delete:
         if not invoke_confirm('deleting puzzle:', 'Year {}'.format(args.year), 'Day {}'.format(args.day)):
@@ -238,7 +276,7 @@ if __name__ == '__main__':
           raise FileNotFoundError('puzzle does not exist:', fd)
         shutil.rmtree(fd)
 
-    except Exception:
+    except Exception as e:
       print('', traceback.format_exc(), '', sep='\n')
       continue
     counter += 1

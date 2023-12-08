@@ -5,6 +5,7 @@ import functools
 from io import IOBase, BytesIO
 from os import PathLike
 from re import compile as re_compile
+from src.aoc_input_parser import AOCInputParser
 
 _re_test_tag_fetch = re_compile(rb'\[(Test|Ans).*\]\B\n')
 
@@ -31,22 +32,12 @@ class AOCBaseClass:
     with open(path, 'rb') as fo:
       return BytesIO(fo.read())
 
-  def tests_unloader(self, buf: IOBase) -> t.Generator[t.Iterator[t.Tuple[str, IOBase]], None, None]:
-    bytes_all = buf.read()
-    tag_matches_it = _re_test_tag_fetch.finditer(bytes_all)
-    tag_matches = list(tag_matches_it)
-    count = len(tag_matches)
+  def iter_test_input(self, buf: IOBase) -> t.Generator[t.Iterator[t.Tuple[str, IOBase]], None, None]:
+    for ans, inp in AOCInputParser.get_matches_from_iostream(buf):
+      yield (ans, inp)
 
-    for n, match in enumerate(tag_matches):
-      start_cursor, end_cursor = match.span()
-      tag = bytes_all[start_cursor:end_cursor].decode(self.default_encoding).strip()
-      if n + 1 == count:
-        bytes_content = bytes_all[end_cursor:]
-      else:
-        next_match = tag_matches[n+1]
-        next_cursor = next_match.span()[0]
-        bytes_content = bytes_all[end_cursor:next_cursor]
-      yield (tag, BytesIO(bytes_content))
+  def process_test_answer(self, b) -> str:
+    return b.decode('utf8')
 
   def parser(self, buf_io: IOBase) -> t.Any:
     raise NotImplementedError('data parser is not yet implemented')
@@ -76,16 +67,9 @@ class AOCBaseClass:
 
     buf = self.loader(part=part, run_as=run_as)
 
-
     if run_as == AOCRunAsEnum.eval:
       yield 'eval', None, callable_sol, callable_parser(buf)
 
     elif run_as == AOCRunAsEnum.test:
-      test_it = list(self.tests_unloader(buf))
-      ans = None
-      for test_name, trunc_buf in test_it:
-        if test_name == '[Ans]':
-          ans = trunc_buf
-          continue
-        yield test_name, ans, callable_sol, callable_parser(trunc_buf)
-        ans = None
+      for i, (inp, ans) in enumerate(self.iter_test_input(buf)):
+        yield 'test {}'.format(i), ans, callable_sol, callable_parser(BytesIO(inp))
