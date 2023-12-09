@@ -12,9 +12,12 @@ from src.state import AOCStateManager
 
 REGEXP_SPECIAL_CHAR = re_compile(r'[^a-zA-Z0-9\s]')
 
+
+
 class AOCConfig:
-  day  = 1
-  year = datetime.now().year
+  class options:
+    print_motd = True
+    clear_console_each_run = False
 
   class paths:
     base_folder = './puzzles'
@@ -31,16 +34,16 @@ class AOCConfig:
 class AOCCommandOpt:
   clear   = 'clear'
   help    = 'help'
+  test    = 'test'
+  stats   = 'stats'
+  eval    = 'eval'
   new     = 'new'
   delete  = 'delete'
-  test    = 'test'
-  eval    = 'eval'
+  set     = 'set'
   exit    = 'exit'
-
 
 def print_motd():
   print("""
-
 ▄▄▄      ▓█████▄  ██▒   █▓▓█████  ███▄    █ ▄▄▄█████▓
 ▒████▄    ▒██▀ ██▌▓██░   █▒▓█   ▀  ██ ▀█   █ ▓  ██▒ ▓▒
 ▒██  ▀█▄  ░██   █▌ ▓██  █▒░▒███   ▓██  ▀█ ██▒▒ ▓██░ ▒░
@@ -77,7 +80,6 @@ def invoke_confirm(*message) -> bool:
 
 def invoke_argv(substr=''):
   return input('AoC {}$: '.format(substr)).lower().split()
-
 
 class ErrorCatchingArgumentParser(argparse.ArgumentParser):
   """
@@ -117,12 +119,17 @@ class ProgUtil:
     if module_name in sys.modules:
       importlib_reload(sys.modules.get(module_name))
 
+  @staticmethod
+  def clear_console():
+    os.system('cls' if os.name=='nt' else 'clear')
+
 
 class AOCArgNamespace:
   def __init__(self):
     self.year: int = 2015
     self.day: int = 1
     self.part: int = 1
+    self.flag: str = ''
     self.command: str = AOCCommandOpt.test
 
   def assert_args(self):
@@ -149,15 +156,17 @@ def parser_build():
     AOCCommandOpt.clear,
     AOCCommandOpt.exit,
     AOCCommandOpt.help,
+    AOCCommandOpt.stats,
     AOCCommandOpt.new,
     AOCCommandOpt.delete,
     AOCCommandOpt.test,
     AOCCommandOpt.eval,
+    AOCCommandOpt.set,
   ])
   parser.add_argument('year', type=int)
   parser.add_argument('day', type=int)
   parser.add_argument('-p', '--part', type=int, dest='part', choices=[1, 2], default=1)
-  parser.add_argument('-f', '--flag', type=str, dest='flag', choices=['idle', 'pass', 'fail'], default='idle')
+  parser.add_argument('-f', '--flag', type=str, dest='flag', choices=['pass', 'fail', 'null'], default='fail')
   return parser
 
 
@@ -173,7 +182,7 @@ def program_inits(*args, **kwargs):
     if not ProgUtil.ensure_file(AOCConfig.paths.state_filename):
       print('creating new save state:', AOCConfig.paths.state_filename)
       state_manager.save()
-
+    state_manager.load()
 
 def program_defers(*args, **kwargs):
   state_manager = kwargs.get('state_manager')
@@ -194,10 +203,17 @@ if __name__ == '__main__':
   while True:
     try:
       argv = invoke_argv()
+
       if not argv:
         continue
 
-      elif argv[0] == AOCCommandOpt.exit:
+      if len(argv) >= 4 and argv[3] != '-p':
+        argv = argv[:3] + ['-p'] + argv[3:]
+
+      if len(argv) >= 6 and argv[5] != '-f':
+        argv = argv[:5] + ['-f'] + argv[5:]
+
+      if argv[0] == AOCCommandOpt.exit:
         break
 
       elif argv[0] == AOCCommandOpt.help:
@@ -205,11 +221,21 @@ if __name__ == '__main__':
         continue
 
       elif argv[0] == AOCCommandOpt.clear:
-        os.system('cls' if os.name=='nt' else 'clear')
+        ProgUtil.clear_console()
         continue
+
+      elif argv[0] == AOCCommandOpt.stats:
+        print(state_manager.stats_repr())
+        continue
+
+      if AOCConfig.options.clear_console_each_run:
+        ProgUtil.clear_console()
 
       parser.parse_args(argv, namespace=args)
       args.assert_args()
+
+      if args.command == AOCCommandOpt.set:
+        state_manager.update(args.year, args.day, args.part, args.flag)
 
       if args.command == AOCCommandOpt.new:
         if not invoke_confirm('creating new puzzle:', 'Year {}'.format(args.year), 'Day {}'.format(args.day)):
@@ -248,18 +274,20 @@ if __name__ == '__main__':
 
         print()
         for puzzle_name, puzzle_ans, puzzle_solution, puzzle_parser in puzzle_instance._run(run_as=args.command, part=args.part):
-          print('evaluating', puzzle_name, end=' ')
+          print('evaluating', puzzle_name)
 
           ret = puzzle_solution(puzzle_parser) 
 
           if args.command == AOCCommandOpt.test:
             puzzle_ans = puzzle_instance.process_test_answer(puzzle_ans)
-            res = ret == puzzle_ans
-            print('->', 'passed' if res else 'try again, expected result:\n{}'.format(puzzle_ans))
+            if ret == puzzle_ans:
+              print('-> test passed')
+            else:
+              print('try again, expected result:')
+              print('   '.join('{}'.format(puzzle_ans).splitlines()))
 
           else:
-            print('result: ', res)
-            print('please check the answer within the website input form.')
+            print('result: ', ret)
 
           print()
 
@@ -279,6 +307,7 @@ if __name__ == '__main__':
     except Exception as e:
       print('', traceback.format_exc(), '', sep='\n')
       continue
+      
     counter += 1
 
   program_defers(state_manager=state_manager)

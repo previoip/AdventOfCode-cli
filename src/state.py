@@ -2,18 +2,8 @@ import typing as t
 import struct
 from collections import OrderedDict
 
-
-class AOCStateFlag:
-  p1_idle = 2 ** 0
-  p1_fail = 2 ** 1
-  p1_pass = 2 ** 2
-  p2_idle = 2 ** 3
-  p2_fail = 2 ** 4
-  p2_pass = 2 ** 5
-
 def sizeof(c: "_AOCStateFrag"):
   return c.calcsize()
-
 
 class _AOCStateFrag:
   
@@ -71,51 +61,79 @@ class AOCYearEntry(_AOCStateFrag):
 
 
 class AOCDayEntry(_AOCStateFrag):
+  flag_failed = 0b01
+  flag_passed = 0b10
+  mask_p1 = 0b0011
+  mask_p2 = 0b1100
   fmt = '<h'
+
+
   def __init__(self):
-    self.part_1_idle: bool
-    self.part_1_fail: bool
-    self.part_1_pass: bool
-    self.part_2_idle: bool
-    self.part_2_fail: bool
-    self.part_2_pass: bool
-    self.reset_state_flag()
+    self.part_1: int
+    self.part_2: int
+    self.reset_state()
 
-  def reset_state_flag():
-    self.part_1_idle = False
-    self.part_1_fail = False
-    self.part_1_pass = False
-    self.part_2_idle = False
-    self.part_2_fail = False
-    self.part_2_pass = False
-    
-  def set_state_flag(self, v: int):
-    self.part_1_idle = bool(v & AOCStateFlag.p1_idle)
-    self.part_1_fail = bool(v & AOCStateFlag.p1_fail)
-    self.part_1_pass = bool(v & AOCStateFlag.p1_pass)
-    self.part_2_idle = bool(v & AOCStateFlag.p2_idle)
-    self.part_2_fail = bool(v & AOCStateFlag.p2_fail)
-    self.part_2_pass = bool(v & AOCStateFlag.p2_pass)
+  def reset_state(self):
+    self.part_1 = 0
+    self.part_2 = 0
 
-  def get_state_flag(self):
-    res = 0
-    res |= AOCStateFlag.p1_idle if self.part_1_idle else 0
-    res |= AOCStateFlag.p1_fail if self.part_1_fail else 0
-    res |= AOCStateFlag.p1_pass if self.part_1_pass else 0
-    res |= AOCStateFlag.p2_idle if self.part_2_idle else 0
-    res |= AOCStateFlag.p2_fail if self.part_2_fail else 0
-    res |= AOCStateFlag.p2_pass if self.part_2_pass else 0
-    return res
+  @classmethod
+  def state_to_vals(cls, st):
+    p1 = (st & cls.mask_p1)
+    p2 = (st & cls.mask_p2)
+    return int(p1), int(p2)
+
+  @classmethod
+  def vals_to_state(cls, vp1, vp2):
+    st = 0
+    st |= vp1
+    st |= vp2
+    return int(st)
+
+  @classmethod
+  def val_to_flag(cls, v):
+    v &= 0b1111
+    if not v >> 2 == 0:
+      v = v >> 2
+    return int(v)
+
+  @classmethod
+  def val_to_repr(cls, fl):
+    fl = cls.val_to_flag(fl)
+    if fl & cls.flag_failed == cls.flag_failed:
+      return 'x'
+    elif fl & cls.flag_passed == cls.flag_passed:
+      return '*'
+    return '-'
+
+  def set_state(self, v: int):
+    self.part_1, self.part_2 = self.state_to_vals(v)
+
+  def get_state(self):
+    return self.vals_to_state(self.part_1, self.part_2)
+
+  @classmethod
+  def get_flag_value(cls, part: int, choice: str):
+    if choice.lower().startswith('fail'):
+      b = cls.flag_failed
+    elif choice.lower().startswith('pass'):
+      b = cls.flag_passed
+    else:
+      return 0
+    if part == 2:
+      b = b << 2
+    return b
 
   def pack(self):
-    return struct.pack(self.fmt, self.get_state_flag())
+    return struct.pack(self.fmt, self.get_state())
 
   def unpack(self, b):
-    self.set_state_flag(struct.unpack(self.fmt, b)[0])
+    self.set_state(struct.unpack(self.fmt, b)[0])
 
 
 class AOCStateManager:
   signature = b'\x42\x00\x69\x69'
+  num_days_in_year = 30
 
   def __init__(self, filepath):
     self.filepath = filepath
@@ -123,8 +141,27 @@ class AOCStateManager:
     self._meta.signature = self.signature
     self._table: t.Mapping[int, list] = OrderedDict()
 
-  def update(self, year, day, part, state):
-    self._table[year][day] = state
+  @property
+  def table(self):
+    return self._table
+
+  def update(self, year, day, part, choice):
+    assert isinstance(year, int)
+    assert isinstance(day, int)
+    assert isinstance(part, int)
+
+    day -= 1
+  
+    if self._table.get(year) is None:
+      self._table[year] = list(map(lambda _: 0, range(self.num_days_in_year)))
+    
+    v = AOCDayEntry.get_flag_value(part, choice)
+    v1, v2 = AOCDayEntry.state_to_vals(self._table[year][day])
+    if part == 1:
+      new_state = AOCDayEntry.vals_to_state(v, v2)
+    elif part == 2:
+      new_state = AOCDayEntry.vals_to_state(v1, v)
+    self._table[year][day] = new_state
 
   def load(self):
     with open(self.filepath, 'rb') as fo:
@@ -146,7 +183,7 @@ class AOCStateManager:
         for _ in range(c_year.length):
           c_day = AOCDayEntry()
           c_day.read(fo)
-          self._table[c_year.year].append(c_day.get_state_flag())
+          self._table[c_year.year].append(c_day.get_state())
 
 
   def save(self):
@@ -154,20 +191,20 @@ class AOCStateManager:
     
     ls_years = list(sorted(self._table.keys()))
 
-    self._meta.latest_year = ls_years[0] if ls_years else 0
+    self._meta.latest_year = int(ls_years[0]) if ls_years else 0
 
     ls_c_years = list()
     ls_c_day = list()
     for year in ls_years:
       c_year = AOCYearEntry()
-      c_year.year = year
+      c_year.year = int(year)
       c_year.length = len(self._table.get(year))
       c_year.offset = sizeof(AOCDayEntry) * len(ls_c_day)
       ls_c_years.append(c_year)
 
-      for day in self._table.get(year):
+      for state in self._table.get(year):
         c_day = AOCDayEntry()
-        c_day.set_state_flag(day)
+        c_day.set_state(state)
         ls_c_day.append(c_day)
 
     self._meta.num_year_entries = len(ls_c_years)
@@ -182,15 +219,77 @@ class AOCStateManager:
       fo.writelines(buf)
   
 
+  def to_table(self, year):
+
+    table = [[['  ', '', ''] for _ in range(5)] for _ in range(7)]
+
+    days = self._table.get(year)
+    if days is None:
+      return table
+
+    for n in range(len(days)):
+      i = n // 7
+      j = n % 7
+
+      table[j][i][0] = '{}.'.format(n+1).rjust(1)
+      v1, v2 = AOCDayEntry.state_to_vals(days[n])
+      v1, v2 = AOCDayEntry.val_to_flag(v1), AOCDayEntry.val_to_flag(v2)
+
+      table[j][i][1] = AOCDayEntry.val_to_repr(v1).ljust(2)
+      table[j][i][2] = AOCDayEntry.val_to_repr(v2).ljust(2)
+    return table
+
+  def stat_year_repr(self, year):
+    days = self._table.get(year)
+    if days is None:
+      return ''
+
+    table = self.to_table(year)
+    r = ''
+
+    for m, i in enumerate(table):
+      for n, j in enumerate(i):
+        r += ' '.join(j).rjust(10)
+        r += '|'
+      r += '\n'
+    return r
+
+
+  def stats_repr(self, year=0):
+    r = ''
+    for i, year in enumerate(self._table.keys()):
+      t = self.stat_year_repr(year)
+      strlen = len(t.splitlines()[0])
+      r += '| {} |'.format(year).center((strlen), '+')
+      r += '\n'
+      r += t
+      r += '+' * strlen
+      r += '\n'
+      r += '\n'
+    r += '\n'
+    return r
+
 if __name__ == '__main__':
+  import os
   a = AOCStateManager('tmpstate')
-  a._table[2023] = [1,2,3,4,5]
-  a._table[2024] = [6,7,8,9,10]
+  a.update(2023, 1, 1, 'fail')
+  a.update(2023, 1, 2, 'pass')
+
+  a.update(2023, 2, 1, 'fail')
+  a.update(2023, 2, 2, 'fail')
+  
+  a.update(2024, 3, 1, 'pass')
+  a.update(2024, 3, 2, 'pass')
+
+  a.update(2024, 4, 1, 'pass')
+  a.update(2024, 4, 2, 'fail')
+
   a.save()
-  print(a._table)
 
   b = AOCStateManager('tmpstate')
   b.load()
-  print(b._table)
+  os.remove('tmpstate')
 
-  assert a._table == b._table
+  assert a.table == b.table
+
+  print(b.stats_repr())

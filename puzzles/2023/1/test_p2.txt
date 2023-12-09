@@ -1,19 +1,11 @@
 >>ans:
-foo
-bar
-baz
+281
 >>input test:
-foo
-bar
-baz
-<<end!
-
->>ans:
-foo
-bar
-baz
->>inp test 2:
-foo
-bar
-blargh
+two1nine
+eightwothree
+abcone2threexyz
+xtwone3four
+4nineeightseven2
+zoneight234
+7pqrstsixteen
 <<end!

@@ -8,6 +8,7 @@ class AOC(AOCBaseClass):
   #   def loader(self, part=1, run_as: AOCRunAsEnum=AOCRunAsEnum.test, *args, **kwargs) -> IOBase:
   #   def parser_part_1(self, buf_io: IOBase) -> t.Any:
   #   def parser_part_2(self, buf_io: IOBase) -> t.Any:
+  #   def process_test_answer(self, b: bytes) -> t.Any:
   #
   # overridable attrs:
   #   self.eval_path_part_1 = 'input_p1.txt'

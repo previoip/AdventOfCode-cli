@@ -36,8 +36,8 @@ class AOCBaseClass:
     for ans, inp in AOCInputParser.get_matches_from_iostream(buf):
       yield (ans, inp)
 
-  def process_test_answer(self, b) -> str:
-    return b.decode('utf8')
+  def process_test_answer(self, b: bytes) -> str:
+    return b.decode(self.default_encoding)
 
   def parser(self, buf_io: IOBase) -> t.Any:
     raise NotImplementedError('data parser is not yet implemented')
@@ -71,5 +71,5 @@ class AOCBaseClass:
       yield 'eval', None, callable_sol, callable_parser(buf)
 
     elif run_as == AOCRunAsEnum.test:
-      for i, (inp, ans) in enumerate(self.iter_test_input(buf)):
+      for i, (ans, inp) in enumerate(self.iter_test_input(buf)):
         yield 'test {}'.format(i), ans, callable_sol, callable_parser(BytesIO(inp))
