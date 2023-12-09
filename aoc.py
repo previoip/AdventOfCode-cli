@@ -40,31 +40,18 @@ class AOCCommandOpt:
   update  = 'update'
   exit    = 'exit'
 
-def print_motd():
-  print("""
-▄▄▄      ▓█████▄  ██▒   █▓▓█████  ███▄    █ ▄▄▄█████▓
-▒████▄    ▒██▀ ██▌▓██░   █▒▓█   ▀  ██ ▀█   █ ▓  ██▒ ▓▒
-▒██  ▀█▄  ░██   █▌ ▓██  █▒░▒███   ▓██  ▀█ ██▒▒ ▓██░ ▒░
-░██▄▄▄▄██ ░▓█▄   ▌  ▒██ █░░▒▓█  ▄ ▓██▒  ▐▌██▒░ ▓██▓ ░
- ▓█   ▓██▒░▒████▓    ▒▀█░  ░▒████▒▒██░   ▓██░  ▒██▒ ░
- ▒▒   ▓▒█░ ▒▒▓  ▒    ░ ▐░  ░░ ▒░ ░░ ▒░   ▒ ▒   ▒ ░░
-  ░   ▒    ░ ░  ░   ▒█████    █████▒     ░ ░   ░
-      ░  ░   ░      ▒██▒  ██▒▓██   ▒       ░
-           ░        ▒██░  ██▒▒████ ░
-                    ▒██   ██░░▓█▒  ░
-                    ░ ████▓▒░░▒█░
-                    ░ ▒░▒░▒░  ▒ ░
-          ▄████▄   ▒█████  ▓█████▄ ▓█████
-          ▒██▀ ▀█  ▒██▒  ██▒▒██▀ ██▌▓█   ▀
-          ▒▓█    ▄ ▒██░  ██▒░██   █▌▒███
-          ▒▓▓▄ ▄██▒▒██   ██░░▓█▄   ▌▒▓█  ▄
-          ▒ ▓███▀ ░░ ████▓▒░░▒████▓ ░▒████▒
-          ░ ░▒ ▒  ░░ ▒░▒░▒░  ▒▒▓  ▒ ░░ ▒░ ░
-            ░  ▒     ░ ▒ ▒░  ░ ▒  ▒  ░ ░  ░
-          ░        ░ ░ ░ ▒   ░ ░  ░    ░
-          ░ ░          ░ ░     ░       ░  ░
-          ░                  ░
-""")
+def print_motd(year=0, motdln1='', motdln2=''):
+  l = 43
+  print()
+  print('v', l//3*'=+=', 'v',sep='')
+  print('|', 'Advent of Code{}'.format(f' {year}' if year else '').center(l), '|',sep='')
+  print('|', '{}'.format(datetime.now()).center(l), '|',sep='')
+  if motdln1:
+    print('|', '- {} -'.format(motdln1).center(l), '|',sep='')
+  if motdln2:
+    print('|', '- {} -'.format(motdln2).center(l), '|',sep='')
+  print('^', l//3*'=+=', '^',sep='')
+  print()
 
 def invoke_confirm(*message) -> bool:
   print()
@@ -161,7 +148,7 @@ class AOCArgNamespace:
       raise Exception('day argument is invalid')
 
   def to_dirpath(self, base_dir):
-    fd = os.path.join(base_dir, str(self.year), str(self.day))
+    fd = os.path.join(base_dir, 'Year {}'.format(self.year), 'Day {:02}'.format(self.day))
     fd = os.path.realpath(fd)
     return fd
 
@@ -193,7 +180,6 @@ def parser_build():
 
 
 def program_inits(*args, **kwargs):
-  print_motd()
 
   if not ProgUtil.ensure_dir(AOCConfig.paths.base_folder):
     print('creating new folder:', AOCConfig.paths.base_folder)
@@ -206,12 +192,20 @@ def program_inits(*args, **kwargs):
       state_manager.save()
     state_manager.load()
 
+  motd = ''
+  year = 0
+  if state_manager._meta.latest_year:
+    year = state_manager._meta.latest_year
+
+  print_motd(year, motd)
+
 def program_defers(*args, **kwargs):
   state_manager = kwargs.get('state_manager')
   if not state_manager is None:
     print('saving latest state')
     state_manager.save()
-  
+
+
   print('updating readme')
   ProgUtil.update_readme(AOCConfig.paths.readme_filename, state_manager.stats_repr())
 
@@ -314,10 +308,10 @@ if __name__ == '__main__':
             if eval_ans == puzzle_ans:
               print('-> test passed')
             else:
-              print('try again, expected result:')
+              print('-> try again, expected result:')
               print(puzzle_ans)
 
-          print('-> result:\t{}'.format(eval_ans))
+          print('-> result: {}'.format(eval_ans))
           print()
 
         del puzzle_instance

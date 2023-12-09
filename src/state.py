@@ -155,7 +155,7 @@ class AOCStateManager:
     assert isinstance(part, int)
 
     self.init_table(year)
-
+    self._meta.latest_year = year
     day -= 1
 
     v = AOCDayEntry.get_flag_value(part, choice)
