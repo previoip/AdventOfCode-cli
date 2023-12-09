@@ -275,20 +275,20 @@ if __name__ == '__main__':
           raise FileExistsError('puzzle already exists:', fd)
         os.makedirs(fd)
 
-        with open(AOCConfig.paths.template_prog_filepath, 'rb') as fo:
-          with open(os.path.join(fd, AOCConfig.paths.puzzle_filename), 'w', encoding='utf8') as fo2:
-            fo2.write(fo.read().decode('utf8'))
+        with open(AOCConfig.paths.template_prog_filepath, 'r') as fo:
+          with open(os.path.join(fd, AOCConfig.paths.puzzle_filename), 'w', encoding='utf8', newline='\n') as fo2:
+            fo2.write(fo.read())
           test_ds_content = fo.read()
-        with open(AOCConfig.paths.template_ds_filepath, 'rb') as fo:
+        with open(AOCConfig.paths.template_ds_filepath, 'r') as fo:
           test_ds_content = fo.read()
         with open(os.path.join(fd, AOCConfig.paths.input_part1_filename), 'w', encoding='utf8', newline='\n'):
           pass
         with open(os.path.join(fd, AOCConfig.paths.input_part2_filename), 'w', encoding='utf8', newline='\n'):
           pass
         with open(os.path.join(fd, AOCConfig.paths.test_part1_filename), 'w', encoding='utf8', newline='\n') as fo:
-          fo.write(test_ds_content.decode('utf8'))
+          fo.write(test_ds_content)
         with open(os.path.join(fd, AOCConfig.paths.test_part2_filename), 'w', encoding='utf8', newline='\n') as fo:
-          fo.write(test_ds_content.decode('utf8'))
+          fo.write(test_ds_content)
 
       elif args.command == AOCCommandOpt.test or args.command == AOCCommandOpt.eval:
         fd = args.to_dirpath(AOCConfig.paths.base_folder)
@@ -305,7 +305,7 @@ if __name__ == '__main__':
 
         print()
         for puzzle_name, puzzle_ans, puzzle_solution, puzzle_parser in puzzle_instance._run(run_as=args.command, part=args.part):
-          print('evaluating', puzzle_name, end=' ')
+          print('evaluating', puzzle_name, args )
 
           eval_ans = puzzle_solution(puzzle_parser) 
 
@@ -315,11 +315,9 @@ if __name__ == '__main__':
               print('-> test passed')
             else:
               print('try again, expected result:')
-              print('\t{}'.format(puzzle_ans))
+              print(puzzle_ans)
 
-          else:
-            print('-> result:\t{}'.format(eval_ans))
-
+          print('-> result:\t{}'.format(eval_ans))
           print()
 
         del puzzle_instance
