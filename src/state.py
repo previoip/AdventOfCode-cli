@@ -98,7 +98,7 @@ class AOCDayEntry(_AOCStateFrag):
     return int(v)
 
   @classmethod
-  def val_to_repr(cls, fl):
+  def flag_repr(cls, fl):
     fl = cls.val_to_flag(fl)
     if fl & cls.flag_failed == cls.flag_failed:
       return 'x'
@@ -133,7 +133,7 @@ class AOCDayEntry(_AOCStateFrag):
 
 class AOCStateManager:
   signature = b'\x42\x00\x69\x69'
-  num_days_in_year = 30
+  num_days_in_session = 25
 
   def __init__(self, filepath):
     self.filepath = filepath
@@ -145,16 +145,19 @@ class AOCStateManager:
   def table(self):
     return self._table
 
+  def init_table(self, year):
+    if self._table.get(year) is None:
+      self._table[year] = list(map(lambda _: 0, range(self.num_days_in_session)))
+
   def update(self, year, day, part, choice):
     assert isinstance(year, int)
     assert isinstance(day, int)
     assert isinstance(part, int)
 
+    self.init_table(year)
+
     day -= 1
-  
-    if self._table.get(year) is None:
-      self._table[year] = list(map(lambda _: 0, range(self.num_days_in_year)))
-    
+
     v = AOCDayEntry.get_flag_value(part, choice)
     v1, v2 = AOCDayEntry.state_to_vals(self._table[year][day])
     if part == 1:
@@ -219,9 +222,9 @@ class AOCStateManager:
       fo.writelines(buf)
   
 
-  def to_table(self, year):
+  def to_repr_table(self, year):
 
-    table = [[['  ', '', ''] for _ in range(5)] for _ in range(7)]
+    table = [[['  ', '', ''] for _ in range((self.num_days_in_session//7)+1)] for _ in range(7)]
 
     days = self._table.get(year)
     if days is None:
@@ -235,8 +238,8 @@ class AOCStateManager:
       v1, v2 = AOCDayEntry.state_to_vals(days[n])
       v1, v2 = AOCDayEntry.val_to_flag(v1), AOCDayEntry.val_to_flag(v2)
 
-      table[j][i][1] = AOCDayEntry.val_to_repr(v1).ljust(2)
-      table[j][i][2] = AOCDayEntry.val_to_repr(v2).ljust(2)
+      table[j][i][1] = AOCDayEntry.flag_repr(v1).ljust(2)
+      table[j][i][2] = AOCDayEntry.flag_repr(v2).ljust(2)
     return table
 
   def stat_year_repr(self, year):
@@ -244,27 +247,30 @@ class AOCStateManager:
     if days is None:
       return ''
 
-    table = self.to_table(year)
+    table = self.to_repr_table(year)
     r = ''
 
     for m, i in enumerate(table):
       for n, j in enumerate(i):
+        if n == 0:
+          r += '|'
         r += ' '.join(j).rjust(10)
         r += '|'
       r += '\n'
     return r
 
 
-  def stats_repr(self, year=0):
+  def stats_repr(self, year_select=0):
     r = ''
     for i, year in enumerate(self._table.keys()):
+      if year_select and year != year_select:
+        continue
       t = self.stat_year_repr(year)
       strlen = len(t.splitlines()[0])
-      r += '| {} |'.format(year).center((strlen), '+')
+      r += ': AoC {} :'.format(year).center((strlen), '=')
       r += '\n'
       r += t
-      r += '+' * strlen
-      r += '\n'
+      r += '=' * strlen
       r += '\n'
     r += '\n'
     return r

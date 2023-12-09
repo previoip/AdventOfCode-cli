@@ -7,8 +7,14 @@ class AOCInputParser:
     re.MULTILINE | re.DOTALL
   )
 
+  regexp_crlf = re.compile(
+    rb'\r\n',
+    re.MULTILINE | re.DOTALL
+  )
+
   @classmethod
   def get_matches(cls, b):
+    b = cls.regexp_crlf.sub(b'\n', b)
     for match in cls.regexp_tags.finditer(b):
       _, ans, _, inp = match.groups()
       yield ans, inp

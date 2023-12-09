@@ -10,9 +10,6 @@ from datetime import datetime
 from re import compile as re_compile
 from src.state import AOCStateManager
 
-REGEXP_SPECIAL_CHAR = re_compile(r'[^a-zA-Z0-9\s]')
-
-
 
 class AOCConfig:
   class options:
@@ -23,12 +20,13 @@ class AOCConfig:
     base_folder = './puzzles'
     template_prog_filepath = './src/template_prog'
     template_ds_filepath = './src/template_ds'
-    state_filename = './state'
+    state_filename = './save'
     puzzle_filename = 'puzzle.py'
     test_part1_filename = 'test_p1.txt'
     test_part2_filename = 'test_p2.txt'
     input_part1_filename = 'input_p1.txt'
     input_part2_filename = 'input_p2.txt'
+    readme_filename = './readme.md'
 
 
 class AOCCommandOpt:
@@ -39,7 +37,7 @@ class AOCCommandOpt:
   eval    = 'eval'
   new     = 'new'
   delete  = 'delete'
-  set     = 'set'
+  update  = 'update'
   exit    = 'exit'
 
 def print_motd():
@@ -123,6 +121,30 @@ class ProgUtil:
   def clear_console():
     os.system('cls' if os.name=='nt' else 'clear')
 
+  @classmethod
+  def update_readme(cls, readme_filepath, content):
+    temp = [
+      '# Advent of Code cli',
+      '',
+      'shell-like advent of code puzzle manager written in python with minimal dependency.',
+      '',
+      '## Stats'
+    ]
+
+    if cls.ensure_file(readme_filepath):
+      with open(readme_filepath, 'r') as fo:
+        temp = fo.read().splitlines()
+
+    tag_index = -1
+    if not '## Stats' in temp:
+      temp.append(['', '## Stats'])
+
+    tag_index = temp.index('## Stats')
+    temp = temp[:tag_index + 1] + ['```', content.strip(), '```']
+
+    with open(readme_filepath, 'w') as fo:
+      fo.writelines(list(map(lambda x: x + '\n', temp)))
+
 
 class AOCArgNamespace:
   def __init__(self):
@@ -161,7 +183,7 @@ def parser_build():
     AOCCommandOpt.delete,
     AOCCommandOpt.test,
     AOCCommandOpt.eval,
-    AOCCommandOpt.set,
+    AOCCommandOpt.update,
   ])
   parser.add_argument('year', type=int)
   parser.add_argument('day', type=int)
@@ -187,7 +209,12 @@ def program_inits(*args, **kwargs):
 def program_defers(*args, **kwargs):
   state_manager = kwargs.get('state_manager')
   if not state_manager is None:
+    print('saving latest state')
     state_manager.save()
+  
+  print('updating readme')
+  ProgUtil.update_readme(AOCConfig.paths.readme_filename, state_manager.stats_repr())
+
   print('program exits gracefully')
 
 
@@ -234,8 +261,11 @@ if __name__ == '__main__':
       parser.parse_args(argv, namespace=args)
       args.assert_args()
 
-      if args.command == AOCCommandOpt.set:
+      if args.command == AOCCommandOpt.update:
         state_manager.update(args.year, args.day, args.part, args.flag)
+        print()
+        print()
+        print(state_manager.stats_repr(args.year))
 
       if args.command == AOCCommandOpt.new:
         if not invoke_confirm('creating new puzzle:', 'Year {}'.format(args.year), 'Day {}'.format(args.day)):
@@ -261,40 +291,39 @@ if __name__ == '__main__':
           fo.write(test_ds_content.decode('utf8'))
 
       elif args.command == AOCCommandOpt.test or args.command == AOCCommandOpt.eval:
-        print('==v==', 'performing {}(s) on puzzle:'.format(args.command), args, '==v==')
         fd = args.to_dirpath(AOCConfig.paths.base_folder)
         fp = os.path.join(fd, AOCConfig.paths.puzzle_filename)
         if not ProgUtil.ensure_file(fp):
           raise FileNotFoundError('file not found:', fp)
 
         ProgUtil.force_hot_reload('src.aoc_base_class')
+        ProgUtil.force_hot_reload('src.aoc_input_parser')
+        ProgUtil.force_hot_reload('src.state')
 
         puzzle_module = ProgUtil.lazy_import('aoc', fp)
         puzzle_instance = puzzle_module.AOC(base_dir=fd)
 
         print()
         for puzzle_name, puzzle_ans, puzzle_solution, puzzle_parser in puzzle_instance._run(run_as=args.command, part=args.part):
-          print('evaluating', puzzle_name)
+          print('evaluating', puzzle_name, end=' ')
 
-          ret = puzzle_solution(puzzle_parser) 
+          eval_ans = puzzle_solution(puzzle_parser) 
 
           if args.command == AOCCommandOpt.test:
             puzzle_ans = puzzle_instance.process_test_answer(puzzle_ans)
-            if ret == puzzle_ans:
+            if eval_ans == puzzle_ans:
               print('-> test passed')
             else:
               print('try again, expected result:')
-              print('   '.join('{}'.format(puzzle_ans).splitlines()))
+              print('\t{}'.format(puzzle_ans))
 
           else:
-            print('result: ', ret)
+            print('-> result:\t{}'.format(eval_ans))
 
           print()
 
         del puzzle_instance
         del puzzle_module
-
-        print('==^==', 'puzzle {} finished:'.format(args.command), args, '==^==')
 
       elif args.command == AOCCommandOpt.delete:
         if not invoke_confirm('deleting puzzle:', 'Year {}'.format(args.year), 'Day {}'.format(args.day)):

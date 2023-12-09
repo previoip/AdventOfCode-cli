@@ -7,8 +7,6 @@ from os import PathLike
 from re import compile as re_compile
 from src.aoc_input_parser import AOCInputParser
 
-_re_test_tag_fetch = re_compile(rb'\[(Test|Ans).*\]\B\n')
-
 class AOCRunAsEnum:
   eval = 'eval'
   test = 'test'

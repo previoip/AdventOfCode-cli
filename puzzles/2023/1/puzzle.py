@@ -20,6 +20,7 @@ class AOC(AOCBaseClass):
 
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
+    self.eval_path_part_1 = 'input_p1.txt'
     self.eval_path_part_2 = 'input_p1.txt'
     self.regexp_non_digit = re.compile(r'[^\d]*')
     self.digit_lit_map = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
