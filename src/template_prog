@@ -23,6 +23,9 @@ class AOC(AOCBaseClass):
     self.test_path_part_1 = 'test_p1.txt'
     self.test_path_part_2 = 'test_p2.txt'
 
+  def process_test_answer(self, b: bytes) -> t.Any:
+    return b.decode(self.default_encoding)
+
   def parser(self, buf_io: IOBase) -> t.Any:
     raise NotImplementedError('data parser is not yet implemented')
     return buf_io.read().decode(self.default_encoding)

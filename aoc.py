@@ -15,6 +15,7 @@ class AOCConfig:
   class options:
     print_motd = True
     clear_console_each_run = False
+    lazy_optional_args_insertion = True
 
   class paths:
     base_folder = './puzzles'
@@ -40,16 +41,13 @@ class AOCCommandOpt:
   update  = 'update'
   exit    = 'exit'
 
-def print_motd(year=0, motdln1='', motdln2=''):
+def print_motd(year=0, motd_ln=[datetime.now()]):
   l = 43
   print()
   print('v', l//3*'=+=', 'v',sep='')
   print('|', 'Advent of Code{}'.format(f' {year}' if year else '').center(l), '|',sep='')
-  print('|', '{}'.format(datetime.now()).center(l), '|',sep='')
-  if motdln1:
-    print('|', '- {} -'.format(motdln1).center(l), '|',sep='')
-  if motdln2:
-    print('|', '- {} -'.format(motdln2).center(l), '|',sep='')
+  for motd in motd_ln:
+    print('|', '- {} -'.format(motd).center(l), '|',sep='')
   print('^', l//3*'=+=', '^',sep='')
   print()
 
@@ -110,19 +108,18 @@ class ProgUtil:
 
   @classmethod
   def update_readme(cls, readme_filepath, content):
-    temp = [
-      '# Advent of Code cli',
-      '',
-      'shell-like advent of code puzzle manager written in python with minimal dependency.',
-      '',
-      '## Stats'
-    ]
-
     if cls.ensure_file(readme_filepath):
       with open(readme_filepath, 'r') as fo:
         temp = fo.read().splitlines()
+    else:
+      temp = [
+        '# Advent of Code cli',
+        '',
+        'shell-like advent of code puzzle manager written in python with minimal dependency.',
+        '',
+        '## Stats'
+      ]
 
-    tag_index = -1
     if not '## Stats' in temp:
       temp.append(['', '## Stats'])
 
@@ -150,6 +147,7 @@ class AOCArgNamespace:
   def to_dirpath(self, base_dir):
     fd = os.path.join(base_dir, 'Year {}'.format(self.year), 'Day {:02}'.format(self.day))
     fd = os.path.realpath(fd)
+    fd = os.path.relpath(fd)
     return fd
 
   def __repr__(self):
@@ -175,7 +173,7 @@ def parser_build():
   parser.add_argument('year', type=int)
   parser.add_argument('day', type=int)
   parser.add_argument('-p', '--part', type=int, dest='part', choices=[1, 2], default=1)
-  parser.add_argument('-f', '--flag', type=str, dest='flag', choices=['pass', 'fail', 'null'], default='fail')
+  parser.add_argument('-f', '--flag', type=str, dest='flag', choices=['pass', 'fail', 'null'], default='null')
   return parser
 
 
@@ -192,12 +190,11 @@ def program_inits(*args, **kwargs):
       state_manager.save()
     state_manager.load()
 
-  motd = ''
   year = 0
   if state_manager._meta.latest_year:
     year = state_manager._meta.latest_year
 
-  print_motd(year, motd)
+  print_motd(year)
 
 def program_defers(*args, **kwargs):
   state_manager = kwargs.get('state_manager')
@@ -205,9 +202,8 @@ def program_defers(*args, **kwargs):
     print('saving latest state')
     state_manager.save()
 
-
-  print('updating readme')
-  ProgUtil.update_readme(AOCConfig.paths.readme_filename, state_manager.stats_repr())
+    print('updating readme')
+    ProgUtil.update_readme(AOCConfig.paths.readme_filename, state_manager.stats_repr())
 
   print('program exits gracefully')
 
@@ -228,11 +224,12 @@ if __name__ == '__main__':
       if not argv:
         continue
 
-      if len(argv) >= 4 and argv[3] != '-p':
-        argv = argv[:3] + ['-p'] + argv[3:]
+      if AOCConfig.options.lazy_optional_args_insertion:
+        if len(argv) >= 4 and argv[3] != '-p':
+          argv = argv[:3] + ['-p'] + argv[3:]
 
-      if len(argv) >= 6 and argv[5] != '-f':
-        argv = argv[:5] + ['-f'] + argv[5:]
+        if len(argv) >= 6 and argv[5] != '-f':
+          argv = argv[:5] + ['-f'] + argv[5:]
 
       if argv[0] == AOCCommandOpt.exit:
         break
@@ -283,6 +280,8 @@ if __name__ == '__main__':
           fo.write(test_ds_content)
         with open(os.path.join(fd, AOCConfig.paths.test_part2_filename), 'w', encoding='utf8', newline='\n') as fo:
           fo.write(test_ds_content)
+        print('done')
+        print()
 
       elif args.command == AOCCommandOpt.test or args.command == AOCCommandOpt.eval:
         fd = args.to_dirpath(AOCConfig.paths.base_folder)
@@ -324,6 +323,8 @@ if __name__ == '__main__':
         if not ProgUtil.ensure_dir(fd):
           raise FileNotFoundError('puzzle does not exist:', fd)
         shutil.rmtree(fd)
+        print('done')
+        print()
 
     except Exception as e:
       print('', traceback.format_exc(), '', sep='\n')
