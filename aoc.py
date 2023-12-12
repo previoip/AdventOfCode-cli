@@ -8,7 +8,7 @@ import traceback
 from importlib import reload as importlib_reload
 from datetime import datetime
 from re import compile as re_compile
-from src.state import AOCStateManager
+from src.aoc.state import AOCStateManager
 
 
 class AOCConfig:

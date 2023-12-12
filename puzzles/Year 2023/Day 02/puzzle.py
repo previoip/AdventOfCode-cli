@@ -1,6 +1,6 @@
 import typing as t
 from io import IOBase
-from src.aoc_base_class import AOCBaseClass, AOCRunAsEnum
+from src.aoc.base_class import AOCBaseClass, AOCRunAsEnum
 from collections import namedtuple
 
 class AOC(AOCBaseClass):

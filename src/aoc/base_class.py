@@ -5,7 +5,7 @@ import functools
 from io import IOBase, BytesIO
 from os import PathLike
 from re import compile as re_compile
-from src.aoc_input_parser import AOCInputParser
+from src.aoc.input_parser import AOCInputParser
 
 class AOCRunAsEnum:
   eval = 'eval'
