@@ -16,6 +16,7 @@ class AOCConfig:
     print_motd = True
     clear_console_each_run = False
     lazy_optional_args_insertion = True
+    update_readme_on_update = True
 
   class paths:
     base_folder = './puzzles'
@@ -257,6 +258,10 @@ if __name__ == '__main__':
         print()
         print()
         print(state_manager.stats_repr(args.year))
+        if AOCConfig.options.update_readme_on_update:
+          print()
+          print('updating readme')
+          ProgUtil.update_readme(AOCConfig.paths.readme_filename, state_manager.stats_repr())
 
       if args.command == AOCCommandOpt.new:
         if not invoke_confirm('creating new puzzle:', 'Year {}'.format(args.year), 'Day {}'.format(args.day)):
