@@ -315,7 +315,7 @@ if __name__ == '__main__':
               print('-> try again, expected result:')
               print(puzzle_ans)
 
-          print('-> result: {}'.format(eval_ans))
+          print('-> result:\n{}'.format(eval_ans))
           print()
 
         del puzzle_instance
