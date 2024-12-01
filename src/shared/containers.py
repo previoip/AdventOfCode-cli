@@ -1,3 +1,4 @@
+import typing as t
 
 class StringMatrix:
   empty = ' '
@@ -66,4 +67,213 @@ class StringMatrix:
       yield char, self.index_to_coord(n)
 
 
+class Tree:
+  def __init__(self, parent=None):
+    self._parent = None
+    self._children = list()
+    self.set_parent(parent)
 
+  def _assert_subclass(self, o):
+    o_is_sub = issubclass(o.__class__, self.__class__)
+    s_is_sub = issubclass(self.__class__, o.__class__)
+    if not o is None and not (o_is_sub or s_is_sub):
+      raise ValueError('object {} is not subclass of {}'.format(o, self))
+
+  def repr(self) -> str:
+    return '<{} {}>'.format(
+        self.__class__.__name__,
+        getattr(self, 'name', hex(id(self)))
+    )
+
+  def __repr__(self) -> str:
+    return self.repr()
+
+  @property
+  def parent(self) -> 'Tree':
+    return self._parent
+
+  @parent.setter
+  def parent(self, node: 'Tree'):
+    self.set_parent(node)
+
+  @property
+  def children(self) -> t.List['Tree']:
+    return self._children.copy()
+
+  @property
+  def rank(self) -> int:
+    return len(self._children)
+
+  @property
+  def depth(self) -> int:
+    c = 0
+    for _ in self.iterupstream():
+      c += 1
+    return c - 1
+
+  @property
+  def atindex(self) -> int:
+    if self.isroot():
+      return -1
+    return self._parent._children.index(self)
+
+  def isroot(self) -> bool:
+    return self.parent is None
+
+  def isleaf(self) -> bool:
+    return self.rank == 0
+
+  def isorphan(self) -> bool:
+    return self.isroot() or self.parent.rank == 1
+
+  def isonstart(self) -> bool:
+    if self.isroot():
+      return False
+    return self.atindex == 0
+
+  def isonend(self) -> bool:
+    if self.isroot():
+      return False
+    return self.atindex == (self._parent.rank - 1)
+
+  def iterchildren(self) -> t.Generator['Tree', None, None]:
+    yield from self._children
+
+  def iteradjacent(self) -> t.Generator['Tree', None, None]:
+    if not self.isroot():
+      yield from filter(self.parent.iterchildren(), lambda node: node!=self)
+
+  def iterupstream(self) -> t.Generator['Tree', None, None]:
+    p = self
+    while not p is None:
+      yield p
+      p = p.parent
+
+  def iterdownstream(self) -> t.Generator['Tree', None, None]:
+    yield self
+    for child in self.iterchildren():
+      yield from child.iterdownstream()
+
+  def set_parent(self, node: 'Tree') -> 'Tree':
+    self._assert_subclass(node)
+    previous_parent = self._parent
+    if not self.isroot():
+      self._parent.remove_child(self)
+    self._parent = node
+    if not node is None:
+      node.append_child(self)
+    return previous_parent
+
+  def append_child(self, node: 'Tree'):
+    self._assert_subclass(node)
+    if node is None:
+      raise ValueError('node arg cannot be None')
+    if node._parent != self:
+      node._parent.remove_child(node)
+      node._parent = self
+    if node in self._children:
+      raise ValueError('{} is already {} child'.format(node, self))
+    self._children.append(node)
+
+  def remove_child(self, node: 'Tree'):
+    if not node in self._children:
+      raise ValueError('{} is not {} child'.format(node, self))
+    if not node._parent == self:
+      raise ValueError('{} parent is not {}'.format(node, self))
+    node._parent = None
+    self._children.remove(node)
+
+  def index(self, node: 'Tree'):
+    self._assert_subclass(node)
+    if not node in self._children:
+      raise IndexError('node is not {} child: {}'.format(node, self))
+    return self._children.index(node)
+
+  def get_child_by_attr(self, attr, value):
+    for c in self._children:
+      if not hasattr(c, attr):
+        print('warning: object has no attribute')
+        continue
+      if getattr(attr, c) == value:
+        return c
+
+  def __getitem__(self, i):
+    if isinstance(i, int):
+      return self._children[i]
+    elif isinstance(i, slice):
+      return tuple(self[i] for i in range(i.start, i.stop, i.step if i.step else 1))
+    elif isinstance(i, tuple):
+      for j in i:
+        return tuple(self[k] for k in j)
+
+  def get_coordinate(self):
+    return tuple(reversed(tuple(map(lambda node: node.atindex, filter(lambda node: not node.isroot(), self.iterupstream())))))
+
+  def get_child_from_coordinate(self, c):
+    cur = self
+    for i in c:
+      cur = cur[c]
+    return cur
+
+  def get_total_node_count(self):
+    c = 0
+    for node in self.iterdownstream():
+      c += 1
+    return c
+
+  def iterreprtree(self, arrowlen=0, maxdepth=99, shownum=False, fill=' '):
+    node = self
+    total = node.get_total_node_count()
+    lstr = '─'
+    strnumfmttmp = '[{: >%sd}]'
+    arpadfmttmp = '{:%s^%d}'
+    arrowlen = max(arrowlen, 0)
+
+    # inode: current node
+    # pnode: parent node
+    # nnode: next parent node
+    for n, inode in enumerate(node.iterdownstream()):
+      strnum = ''
+      strlen = arrowlen
+      if shownum and not inode.isroot():
+        c = max(len(str(inode.parent.rank)), 2)
+        strnumfmt = strnumfmttmp % c
+        arpadfmt = arpadfmttmp % (lstr, max(arrowlen, c+2))
+        strnum = strnumfmt.format(inode.atindex)
+        arpad = arpadfmt.format(strnum)
+        strlen = c + 2
+      else:
+        arpadfmt = arpadfmttmp % (lstr, max(arrowlen, 0))
+        arpad = arpadfmt.format('')
+      srpad = fill * strlen
+
+      s = ''
+      d = inode.depth
+      if d > maxdepth:
+        continue
+      pnodes = tuple(inode.iterupstream())
+      for pnode in reversed(pnodes):
+        d -= 1
+        nnode = pnodes[max(0, d)]
+        if False: pass
+        elif pnode == inode:
+          continue
+        elif d == 0 and pnode.rank > 0 and inode.isonstart() and not inode.isorphan():
+          s += '╰┬' + arpad
+        elif d == 0 and pnode.rank > 1 and inode.isonend():
+          s += fill + '╰' + arpad
+        elif d == 0 and pnode.rank > 0 and not (inode.isonstart() or inode.isonend()):
+          s += fill + '├' + arpad
+        elif d == 0 and inode.isonend():
+          s += '╰─' + arpad
+        elif nnode.rank > 0 and not nnode.isonend():
+          s += fill + '│' + srpad
+        else:
+          s += fill * 2 + srpad
+      if inode.isleaf():
+        s += lstr + '●'
+      elif inode.depth > maxdepth - 1:
+        s += '■'
+      else:
+        s += '┬○'
+      yield inode, s
