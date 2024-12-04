@@ -104,7 +104,7 @@ class AOCDayEntry(_AOCStateFrag):
       return 'x'
     elif fl & cls.flag_passed == cls.flag_passed:
       return '*'
-    return '-'
+    return ' '
 
   def set_state(self, v: int):
     self.part_1, self.part_2 = self.state_to_vals(v)
