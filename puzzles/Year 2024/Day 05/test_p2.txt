@@ -1,0 +1,19 @@
+>>ans:
+foo
+bar
+baz
+>>input test:
+foo
+bar
+baz
+<<end!
+
+>>ans:
+foo
+bar
+baz
+>>inp test 2:
+foo
+bar
+blargh
+<<end!
