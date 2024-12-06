@@ -1,4 +1,6 @@
 import typing as t
+from array import array
+from math import copysign
 
 class StringMatrix:
   empty = ' '
@@ -66,6 +68,138 @@ class StringMatrix:
     for n, char in enumerate(self._buf):
       yield char, self.index_to_coord(n)
 
+
+class StringMatrixV2:
+  empty = ' '
+
+  def __init__(self, string: str, strict=False):
+    self.data = None
+    self.strict = strict
+    self.width = 0
+    self.height = 0
+    self.length = 0
+    if string:
+      self.from_string(string)
+    else:
+      self.data = array('u', '')
+
+
+  def from_string(self, string):
+    string = string.strip()
+    self.data = array('u', string.replace('\n', '').replace('\r', ''))
+    rows = string.splitlines()
+    self.width = len(rows[0])
+    self.height  = len(rows)
+    self.length = self.width * self.height
+    for row in rows:
+      assert self.width == len(row)
+    return self
+
+  def from_empty(self, w, h, c=' '):
+    if not c:
+      c = self.empty
+    self.width = w
+    self.height = h
+    self.length = self.width * self.height
+    self.data = array('u', c*self.length)
+    return self
+
+  def index_to_coo(self, n):
+    return n % self.width, n // self.width
+  
+  def coo_to_index(self, x, y):
+    return x + self.width * y
+
+  def check_oob_from_coo(self, x, y):
+    n = self.coo_to_index(x, y)
+    return self.check_oob_from_index(n)
+
+  def check_oob_from_index(self, n):
+    return n < 0 or n >= self.length
+
+  def get_cell_from_index(self, n):
+    if self.check_oob_from_index(n):
+      if self.strict:
+        raise IndexError()
+      return self.empty
+    return self.data[n]
+
+  def get_cell_from_coo(self, x, y):
+    if self.check_oob_from_coo(x, y):
+      if self.strict:
+        raise IndexError()
+      return self.empty
+    return self.data[self.coo_to_index(x, y)]
+
+  def get_col(self, n):
+    if n >= self.height:
+      if self.strict:
+        raise IndexError()
+      return array('u', self.empty*self.height)
+    return self.data[n::self.width]
+
+  def get_row(self, n):
+    if n >= self.width:
+      if self.strict:
+        raise IndexError()
+      return array('u', self.empty*self.width)
+    return self.data[self.width*n:self.width*(n+1)]
+
+  def fetch_line(self, x, y, arr, octant=0):
+    octant %= 8
+    n = len(arr)
+    ind = array('i', range(n))
+    s = copysign(1, 4-octant) if octant % 4 != 0 else 0
+    octant += 2
+    octant %= 8
+    c = copysign(1, 4-octant) if octant % 4 != 0 else 0
+    for i in range(n):
+      ix, iy = x+int(i*c), y+int(i*s)
+      ind[i] = self.coo_to_index(ix, iy)
+      arr[i] = self.get_cell_from_coo(ix, iy)
+    return ind
+
+  def get_line(self, x, y, n, octant=0):
+    buf = array('u', ' '*n)
+    ind = self.fetch_line(x, y, buf, octant)
+    return ind, buf
+  
+  def set_char(self, x, y, c):
+    if self.check_oob_from_coo(x, y):
+      return
+    n = self.coo_to_index(x, y)
+    self.set_char_from_index(n, c)
+
+  def set_char_from_index(self, n, c):
+    self.data[n] = c
+
+  def has_char(self, c):
+    return self.count_char(c) > 0
+
+  def get_char_index(self, c):
+    return self.data.index(c)
+
+  def count_char(self, c):
+    return self.data.count(c)
+
+  def iter_cell(self):
+    for n, c in enumerate(self.data):
+      yield n, c
+
+  def iter_row(self):
+    for n in range(self.height):
+      yield n, self.get_row(n)
+
+  def iter_col(self):
+    for n in range(self.width):
+      yield n, self.get_col(n)
+
+  def __repr__(self):
+    r = ''
+    for _, arr in self.iter_row():
+      r += arr.tounicode()
+      r += '\n'
+    return r
 
 class Tree:
   def __init__(self, parent=None):

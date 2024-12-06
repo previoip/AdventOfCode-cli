@@ -81,11 +81,13 @@ class StringMatrix:
     return self.data[self.width*n:self.width*(n+1)]
 
   def get_line(self, x, y, n, octant=0):
+    octant %= 8
     ind = array('i', range(n))
     buf = array('u', ' '*n)
-    s = copysign(1, 4-(octant%8)) if octant % 4 != 0 else 0
+    s = copysign(1, 4-octant) if octant % 4 != 0 else 0
     octant += 2
-    c = copysign(1, 4-(octant%8)) if octant % 4 != 0 else 0
+    octant %= 8
+    c = copysign(1, 4-octant) if octant % 4 != 0 else 0
     for i in range(n):
       ix, iy = x+int(i*c), y+int(i*s)
       ind[i] = self.coo_to_index(ix, iy)
@@ -114,6 +116,9 @@ class StringMatrix:
     if self.check_oob_from_coo(x, y):
       return
     n = self.coo_to_index(x, y)
+    self.set_char_from_index(n, c)
+
+  def set_char_from_index(self, n, c):
     self.data[n] = c
 
   def iter_cell(self):
@@ -159,7 +164,7 @@ class AOC(AOCBaseClass):
     self.xmas_set = 'XMAS'
     self.frame_char_null = ' '
     self.frame_char_searched = '.'
-
+    self.frame_arr_searched = array('u', self.frame_char_searched*4)
 
   def process_test_answer(self, b: bytes) -> t.Any:
     return int(b.decode(self.default_encoding))
@@ -167,18 +172,40 @@ class AOC(AOCBaseClass):
   def parser(self, buf_io: IOBase) -> t.Any:
     return buf_io.read().decode(self.default_encoding)
 
+  def playground(self):
+    test_string = ''
+    n = 33
+    for i in range(9):
+      for j in range(9):
+        test_string += chr(n)
+        n += 1
+      test_string += '\n'
+    test_matrix = StringMatrix(test_string)
+    print(test_matrix)
+    for i in range(8):
+      print(test_matrix.get_line(4,4,4,i))
+
   def solution_part_1(self, parsed_input) -> t.Any:
+    # self.playground()
     count = 0
-    matrix = StringMatrix(parsed_input)
-    # frame = StringMatrix('').from_empty(matrix.width, matrix.height, self.frame_char_null)
-    for n, cel in matrix.iter_cell():
-      x, y = matrix.index_to_coo(n)
+    string_matrix = StringMatrix(parsed_input)
+    print(string_matrix)
+    frame_matrix = StringMatrix('').from_empty(string_matrix.width, string_matrix.height, self.frame_char_null)
+    for n, cel in string_matrix.iter_cell():
+      x, y = string_matrix.index_to_coo(n)
       for i in range(8):
-        indices, line = matrix.get_line(x,y,4,i)
+        indices, line = string_matrix.get_line(x,y,4,i)
         if line.tounicode() == self.xmas_set:
+          # print(line, indices)
+          # indices, frame = frame_matrix.get_line(x,y,4,i)
+          # if frame == self.frame_arr_searched:
+          #   for j in indices:
+          #     frame_matrix.set_char_from_index(j, '#')
+          # else:
+          #   for j in indices:
+          #     frame_matrix.set_char_from_index(j, self.frame_char_searched)
           count += 1
-          # for ix, iy in map(matrix.index_to_coo, indices):
-          #   frame.set_char(ix, iy, matrix.get_cell_from_coo(ix, iy))
+    # print(frame_matrix)
     return count
 
   def solution_part_2(self, parsed_input) -> t.Any:
