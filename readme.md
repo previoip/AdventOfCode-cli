@@ -55,6 +55,6 @@ Completed puzzles but apparently lost and can't re-retrieve puzzle input:
 |  4.      | 11.      | 18.      | 25.      |
 |  5.      | 12.      | 19.      |          |
 |  6.      | 13.      | 20.      |          |
-|  7.      | 14.      | 21.      |          |
+|  7. *  * | 14.      | 21.      |          |
 =============================================
 ```
