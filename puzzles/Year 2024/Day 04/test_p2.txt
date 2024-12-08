@@ -1,19 +1,14 @@
 >>ans:
-foo
-bar
-baz
+9
 >>input test:
-foo
-bar
-baz
-<<end!
-
->>ans:
-foo
-bar
-baz
->>inp test 2:
-foo
-bar
-blargh
+MMMSXXMASM
+MSAMXMSMSA
+AMXSXMAAMM
+MSAMASMSMX
+XMASAMXAMM
+XXAMMXXAMA
+SMSMSASXSS
+SAXAMASAAA
+MAMMMXMMMM
+MXMXAXMASX
 <<end!

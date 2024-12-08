@@ -12,3 +12,19 @@ SAXAMASAAA
 MAMMMXMMMM
 MXMXAXMASX
 <<end!
+
+
+>>ans:
+6
+>>input test:
+X......X.SAM
+XM....M.....
+..A..A......
+...SS...XMAS
+...SS...SAMX
+..A..A......
+.M....M.....
+X......X....
+
+
+<<end!
