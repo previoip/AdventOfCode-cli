@@ -111,11 +111,15 @@ class StringMatrixV2:
     return x + self.width * y
 
   def check_oob_from_coo(self, x, y):
-    n = self.coo_to_index(x, y)
-    return self.check_oob_from_index(n)
+    if x < 0 or x >= self.width:
+      return True
+    if y < 0 or y >= self.height:
+      return True
+    return False
 
   def check_oob_from_index(self, n):
-    return n < 0 or n >= self.length
+    x, y = self.index_to_coo(n)
+    return self.check_oob_from_coo(x, y)
 
   def get_cell_from_index(self, n):
     if self.check_oob_from_index(n):
@@ -145,7 +149,7 @@ class StringMatrixV2:
       return array('u', self.empty*self.width)
     return self.data[self.width*n:self.width*(n+1)]
 
-  def fetch_line(self, x, y, arr, octant=0):
+  def fetch_line(self, x, y, arr, octant=0, offset=0):
     octant %= 8
     n = len(arr)
     ind = array('i', range(n))
@@ -154,14 +158,14 @@ class StringMatrixV2:
     octant %= 8
     c = copysign(1, 4-octant) if octant % 4 != 0 else 0
     for i in range(n):
-      ix, iy = x+int(i*c), y+int(i*s)
+      ix, iy = x+int((i+offset)*c), y+int((i+offset)*s)
       ind[i] = self.coo_to_index(ix, iy)
       arr[i] = self.get_cell_from_coo(ix, iy)
     return ind
 
-  def get_line(self, x, y, n, octant=0):
+  def get_line(self, x, y, n, octant=0, offset=0):
     buf = array('u', ' '*n)
-    ind = self.fetch_line(x, y, buf, octant)
+    ind = self.fetch_line(x, y, buf, octant, offset)
     return ind, buf
   
   def set_char(self, x, y, c):
