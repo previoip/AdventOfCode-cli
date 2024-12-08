@@ -21,7 +21,7 @@ class AOC(AOCBaseClass):
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.eval_path_part_1 = 'input_p1.txt'
-    self.eval_path_part_2 = 'input_p2.txt'
+    self.eval_path_part_2 = 'input_p1.txt'
     self.test_path_part_1 = 'test_p1.txt'
     self.test_path_part_2 = 'test_p2.txt'
     self.world = StringMatrixV2('')
@@ -44,6 +44,7 @@ class AOC(AOCBaseClass):
       '<': '^',
     }
     self.viewbuf = array('u', '  ')
+    self.frame_viewbuf = array('u', '  ')
 
   def process_test_answer(self, b: bytes) -> t.Any:
     return int(b.decode(self.default_encoding))
@@ -67,25 +68,91 @@ class AOC(AOCBaseClass):
       quadrant * 2
     )
 
+    self.frame.fetch_line(
+      x, y,
+      self.frame_viewbuf,
+      quadrant * 2
+    )
+
     obstructed = self.viewbuf.count(self.char_obstacle) > 0
     if obstructed:
       self.guard_current_char = self.guard_char_cycle_90deg.get(self.guard_current_char)
 
     (dx, dy), _ = self.guard_moveset.get(self.guard_current_char)
     ix, iy = x+dx, y+dy
-    self.frame.set_char(x, y, self.char_visited)
+    self.frame.set_char(ix, iy, self.guard_current_char)
     self.world.set_char(x, y, self.char_visited)
     self.world.set_char(ix, iy, self.guard_current_char)
     self.guard_current_pos = self.world.coo_to_index(ix, iy)
-    return not self.world.check_oob_from_index(self.guard_current_pos)
+    return not self.world.check_oob_from_coo(ix, iy)
 
   def solution_part_1(self, parsed_input) -> t.Any:
     self.guard_current_pos = self.world.get_char_index(self.guard_current_char)
+    self.frame.set_char_from_index(self.guard_current_pos, self.guard_current_char)
     c = 0
+    import time
     while self.update():
+      if c % 10 == 0:
+        print(self.frame)
+        time.sleep(.01)
       c += 1
+      print(self.frame)
     return self.world.count_char(self.char_visited)
 
   def solution_part_2(self, parsed_input) -> t.Any:
-    raise NotImplementedError('puzzle part 2 is not yet implemented')
-    return parsed_input
+    self.guard_current_pos = self.world.get_char_index(self.guard_current_char)
+    self.frame.set_char_from_index(self.guard_current_pos, self.guard_current_char)
+    obstacle_frame = StringMatrixV2('').from_empty(self.world.width, self.world.height, self.char_empty)
+    scan_loop_buf = array('u', ' '*(max(self.world.width, self.world.height)))
+    counter = 0
+
+    while self.update():
+      # print(counter)
+
+      while obstacle_frame.count_char(self.char_visited) > 0:
+        obstacle_frame.set_char_from_index(obstacle_frame.data.index(self.char_visited), self.char_empty)
+
+      _, quadrant = self.guard_moveset.get(self.guard_current_char)
+      x0, y0 = self.world.index_to_coo(self.guard_current_pos)
+      x, y = x0, y0
+      octant0 = quadrant * 2
+      octant0 += 2
+      octant = octant0
+      self.world.fetch_line(x, y, scan_loop_buf, octant0)
+      indefinitely_stuck_in_loop = False
+      indefinitely_stuck_in_loop_counter = 0
+      while self.char_obstacle in scan_loop_buf:
+        jump = scan_loop_buf.index(self.char_obstacle) - 1
+        if jump < 1:
+          break
+        s, c = self.world._octant_to_cosine_sign(octant)
+        x, y = x+int(jump*c), y+int(jump*s)
+
+        if not obstacle_frame.get_cell_from_coo(x, y) == self.char_obstacle:
+          obstacle_frame.set_char(x, y, self.char_visited)
+
+        if self.world.check_oob_from_coo(x, y):
+          break
+
+        octant += 2
+        self.world.fetch_line(x, y, scan_loop_buf, octant)
+
+        indefinitely_stuck_in_loop_counter += 1
+
+        if self.guard_current_char in scan_loop_buf:
+          print(counter, 'found!')
+          jump = scan_loop_buf.index(self.guard_current_char) + 1
+          s, c = self.world._octant_to_cosine_sign(octant)
+          x, y = x+int(jump*c), y+int(jump*s)
+          obstacle_frame.set_char(x, y, self.char_obstacle)
+          break
+        if indefinitely_stuck_in_loop_counter > 10000:
+          print(counter, 'stuck in internal loop?')
+          # s, c = self.world._octant_to_cosine_sign(octant0-2)
+          # x, y = x0+int(c), y0+int(s)
+          # obstacle_frame.set_char(x, y, self.char_obstacle)
+          break
+
+      counter += 1
+    print(obstacle_frame)
+    return obstacle_frame.count_char(self.char_obstacle)

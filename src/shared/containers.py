@@ -149,14 +149,19 @@ class StringMatrixV2:
       return array('u', self.empty*self.width)
     return self.data[self.width*n:self.width*(n+1)]
 
-  def fetch_line(self, x, y, arr, octant=0, offset=0):
+  @staticmethod
+  def _octant_to_cosine_sign(octant):
     octant %= 8
-    n = len(arr)
-    ind = array('i', range(n))
     s = copysign(1, 4-octant) if octant % 4 != 0 else 0
     octant += 2
     octant %= 8
     c = copysign(1, 4-octant) if octant % 4 != 0 else 0
+    return s, c
+
+  def fetch_line(self, x, y, arr, octant=0, offset=0):
+    n = len(arr)
+    ind = array('i', range(n))
+    s, c = self._octant_to_cosine_sign(octant)
     for i in range(n):
       ix, iy = x+int((i+offset)*c), y+int((i+offset)*s)
       ind[i] = self.coo_to_index(ix, iy)
