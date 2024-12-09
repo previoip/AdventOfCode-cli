@@ -4,6 +4,71 @@ from src.aoc.base_class import AOCBaseClass, AOCRunAsEnum
 from src.shared.containers import StringMatrixV2
 from array import array
 
+class GuardsChallenge:
+  def __init__(self, string):
+    self.world = StringMatrixV2(string)
+    self.frame = StringMatrixV2('').from_empty(self.world.width, self.world.height)
+    self.char_empty = '.'
+    self.char_visited = 'X'
+    self.char_obstacle = '#'
+    self.guard_pos_x = 0
+    self.guard_pos_y = 0
+    self.guard_char = ''
+    self.guard_heading = 0
+    self.guard_moveset = {
+      '^': (( 0,-1), 6),
+      '>': (( 1, 0), 0),
+      'v': (( 0, 1), 2),
+      '<': ((-1, 0), 4),
+    }
+    self.guard_cycle = {
+      '^': '>',
+      '>': 'v',
+      'v': '<',
+      '<': '^',
+    }
+    self.buf_view_front = array('u', self.char_empty*max(self.world.width, self.world.height))
+    self.step_log = list()
+    self.step_cur = None
+
+    for c in self.guard_cycle:
+      if self.world.has_char(c):
+        self.guard_char = c
+        break
+    self.guard_pos_x, self.guard_pos_y = self.world.index_to_coo(self.world.get_char_index(self.guard_char))
+    _, self.guard_heading = self.guard_moveset.get(self.guard_char)
+    self.scan_view()
+
+
+  def clone(self):
+    return self.__class__(str(self.world))
+
+  def obstructed(self):
+    return self.char_obstacle in self.buf_view_front and self.buf_view_front.index(self.char_obstacle) == 1
+
+  def out_of_bound(self):
+    return self.world.check_oob_from_coo(self.guard_pos_x, self.guard_pos_y)
+
+  def looped(self):
+    return self.step_cur in self.step_log[:-1]
+
+  def scan_view(self):
+    self.world.fetch_line(self.guard_pos_x, self.guard_pos_y, self.buf_view_front, self.guard_heading)
+
+  def step(self):
+    if self.obstructed():
+      self.guard_char = self.guard_cycle.get(self.guard_char)
+    (dx, dy), self.guard_heading = self.guard_moveset.get(self.guard_char)
+    self.world.set_char(self.guard_pos_x, self.guard_pos_y, self.char_visited)
+    self.guard_pos_x += dx
+    self.guard_pos_y += dy
+    self.world.set_char(self.guard_pos_x, self.guard_pos_y, self.guard_char)
+    self.scan_view()
+    self.step_cur = (self.world.coo_to_index(self.guard_pos_x, self.guard_pos_y), self.guard_heading)
+    self.step_log.append(self.step_cur)
+
+
+
 class AOC(AOCBaseClass):
 
   # overridable methods:
@@ -24,135 +89,41 @@ class AOC(AOCBaseClass):
     self.eval_path_part_2 = 'input_p1.txt'
     self.test_path_part_1 = 'test_p1.txt'
     self.test_path_part_2 = 'test_p2.txt'
-    self.world = StringMatrixV2('')
-    self.frame = StringMatrixV2('')
-    self.char_empty = '.'
-    self.char_visited = 'X'
-    self.char_obstacle = '#'
-    self.guard_current_pos = None
-    self.guard_current_char = ''
-    self.guard_moveset = {
-      '^': (( 0,-1), 3),
-      '>': (( 1, 0), 0),
-      'v': (( 0, 1), 1),
-      '<': ((-1, 0), 2),
-    }
-    self.guard_char_cycle_90deg = {
-      '^': '>',
-      '>': 'v',
-      'v': '<',
-      '<': '^',
-    }
-    self.viewbuf = array('u', '  ')
-    self.frame_viewbuf = array('u', '  ')
+    self.game = None
+
 
   def process_test_answer(self, b: bytes) -> t.Any:
     return int(b.decode(self.default_encoding))
 
   def parser(self, buf_io: IOBase) -> t.Any:
-    self.world.from_string(buf_io.read().decode(self.default_encoding))
-    self.frame.from_empty(self.world.width, self.world.height, self.char_empty)
-    for c in '^><v':
-      if self.world.has_char(c):
-        self.guard_current_char = c
-        break
+    self.game = GuardsChallenge(buf_io.read().decode(self.default_encoding).strip())
     return None
 
-  def update(self):
-    x, y = self.world.index_to_coo(self.guard_current_pos)
-    _, quadrant = self.guard_moveset.get(self.guard_current_char)
-
-    self.world.fetch_line(
-      x, y,
-      self.viewbuf,
-      quadrant * 2
-    )
-
-    self.frame.fetch_line(
-      x, y,
-      self.frame_viewbuf,
-      quadrant * 2
-    )
-
-    obstructed = self.viewbuf.count(self.char_obstacle) > 0
-    if obstructed:
-      self.guard_current_char = self.guard_char_cycle_90deg.get(self.guard_current_char)
-
-    (dx, dy), _ = self.guard_moveset.get(self.guard_current_char)
-    ix, iy = x+dx, y+dy
-    self.frame.set_char(ix, iy, self.guard_current_char)
-    self.world.set_char(x, y, self.char_visited)
-    self.world.set_char(ix, iy, self.guard_current_char)
-    self.guard_current_pos = self.world.coo_to_index(ix, iy)
-    return not self.world.check_oob_from_coo(ix, iy)
-
   def solution_part_1(self, parsed_input) -> t.Any:
-    self.guard_current_pos = self.world.get_char_index(self.guard_current_char)
-    self.frame.set_char_from_index(self.guard_current_pos, self.guard_current_char)
-    c = 0
-    import time
-    while self.update():
-      if c % 10 == 0:
-        print(self.frame)
-        time.sleep(.01)
-      c += 1
-      print(self.frame)
-    return self.world.count_char(self.char_visited)
+    while not self.game.out_of_bound():
+      self.game.step()
+      print(self.game.world)
+    return self.game.world.count_char(self.game.char_visited)
 
   def solution_part_2(self, parsed_input) -> t.Any:
-    self.guard_current_pos = self.world.get_char_index(self.guard_current_char)
-    self.frame.set_char_from_index(self.guard_current_pos, self.guard_current_char)
-    obstacle_frame = StringMatrixV2('').from_empty(self.world.width, self.world.height, self.char_empty)
-    scan_loop_buf = array('u', ' '*(max(self.world.width, self.world.height)))
-    counter = 0
-
-    while self.update():
-      # print(counter)
-
-      while obstacle_frame.count_char(self.char_visited) > 0:
-        obstacle_frame.set_char_from_index(obstacle_frame.data.index(self.char_visited), self.char_empty)
-
-      _, quadrant = self.guard_moveset.get(self.guard_current_char)
-      x0, y0 = self.world.index_to_coo(self.guard_current_pos)
-      x, y = x0, y0
-      octant0 = quadrant * 2
-      octant0 += 2
-      octant = octant0
-      self.world.fetch_line(x, y, scan_loop_buf, octant0)
-      indefinitely_stuck_in_loop = False
-      indefinitely_stuck_in_loop_counter = 0
-      while self.char_obstacle in scan_loop_buf:
-        jump = scan_loop_buf.index(self.char_obstacle) - 1
-        if jump < 1:
-          break
-        s, c = self.world._octant_to_cosine_sign(octant)
-        x, y = x+int(jump*c), y+int(jump*s)
-
-        if not obstacle_frame.get_cell_from_coo(x, y) == self.char_obstacle:
-          obstacle_frame.set_char(x, y, self.char_visited)
-
-        if self.world.check_oob_from_coo(x, y):
-          break
-
-        octant += 2
-        self.world.fetch_line(x, y, scan_loop_buf, octant)
-
-        indefinitely_stuck_in_loop_counter += 1
-
-        if self.guard_current_char in scan_loop_buf:
-          print(counter, 'found!')
-          jump = scan_loop_buf.index(self.guard_current_char) + 1
-          s, c = self.world._octant_to_cosine_sign(octant)
-          x, y = x+int(jump*c), y+int(jump*s)
-          obstacle_frame.set_char(x, y, self.char_obstacle)
-          break
-        if indefinitely_stuck_in_loop_counter > 10000:
-          print(counter, 'stuck in internal loop?')
-          # s, c = self.world._octant_to_cosine_sign(octant0-2)
-          # x, y = x0+int(c), y0+int(s)
-          # obstacle_frame.set_char(x, y, self.char_obstacle)
-          break
-
-      counter += 1
-    print(obstacle_frame)
-    return obstacle_frame.count_char(self.char_obstacle)
+    buf_view_left = array('u', self.game.char_empty*max(self.game.world.width, self.game.world.height))
+    loop_count = 0
+    while not self.game.out_of_bound():
+      self.game.step()
+      self.game.world.fetch_line(self.game.guard_pos_x, self.game.guard_pos_y, buf_view_left, self.game.guard_heading + 2)
+      if not self.game.obstructed() and self.game.char_obstacle in buf_view_left:
+        test_game = self.game.clone()
+        (dx, dy), _ = test_game.guard_moveset.get(test_game.guard_char)
+        test_game.world.set_char(test_game.guard_pos_x+dx, test_game.guard_pos_y+dy, test_game.char_obstacle)
+        test_game.scan_view()
+        while not test_game.out_of_bound():
+          test_game.step()
+          if test_game.looped():
+            loop_count += 1
+            print('looped!', loop_count)
+            for step_index, _ in test_game.step_log[test_game.step_log.index(test_game.step_cur):]:
+              test_game.world.set_char(*test_game.world.index_to_coo(step_index), '+')
+            print(test_game.world)
+            self.game.frame.set_char(self.game.guard_pos_x+dx, self.game.guard_pos_y+dy, self.game.char_obstacle)
+            break
+    return self.game.frame.count_char(self.game.char_obstacle)
