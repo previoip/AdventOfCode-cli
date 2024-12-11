@@ -172,7 +172,16 @@ class StringMatrixV2:
     buf = array('u', ' '*n)
     ind = self.fetch_line(x, y, buf, octant, offset)
     return ind, buf
-  
+
+  def get_occurrences(self, c):
+      n = self.count_char(c)
+      indices = [None for _ in range(n)]
+      offset = -1
+      for i in range(n):
+        offset = self.data.index(c, offset+1)
+        indices[i] = self.index_to_coo(offset)
+      return indices
+
   def set_char(self, x, y, c):
     if self.check_oob_from_coo(x, y):
       return
