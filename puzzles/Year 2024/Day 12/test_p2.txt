@@ -1,0 +1,55 @@
+>>ans:
+80
+>>input test:
+AAAA
+BBCD
+BBCC
+EEEC
+<<end!
+
+>>ans:
+436
+>>input test:
+OOOOO
+OXOXO
+OOOOO
+OXOXO
+OOOOO
+<<end!
+
+>>ans:
+236
+>>input test:
+EEEEE
+EXXXX
+EEEEE
+EXXXX
+EEEEE
+<<end!
+
+>>ans:
+368
+>>input test:
+AAAAAA
+AAABBA
+AAABBA
+ABBAAA
+ABBAAA
+AAAAAA
+<<end!
+
+>>ans:
+1206
+>>input test:
+RRRRIICCFF
+RRRRIICCCF
+VVRRRCCFFF
+VVRCCCJFFF
+VVVVCJJCFE
+VVIVCCJJEE
+VVIIICJJEE
+MIIIIIJJEE
+MIIISIJEEE
+MMMISSJEEE
+<<end!
+
