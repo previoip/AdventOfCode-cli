@@ -1,6 +1,7 @@
 import typing as t
 from array import array
 from math import copysign
+from collections import deque
 
 class StringMatrix:
   empty = ' '
@@ -78,11 +79,21 @@ class StringMatrixV2:
     self.width = 0
     self.height = 0
     self.length = 0
+    self.scale = 0
     if string:
       self.from_string(string)
     else:
       self.data = array('u', '')
 
+  @property
+  def scale_offset(self):
+    return 2 ** self.scale - 1 
+
+  def offset_scale_index(self, n):
+    return self.scale_offset + (n * (self.scale_offset + 1))
+
+  def offset_scale_coo(self, x, y):
+    return self.offset_scale_index(x), self.offset_scale_index(y)
 
   def from_string(self, string):
     string = string.strip()
@@ -93,6 +104,7 @@ class StringMatrixV2:
     self.length = self.width * self.height
     for row in rows:
       assert self.width == len(row)
+    self.scale = 0
     return self
 
   def from_empty(self, w, h, c=' '):
@@ -102,6 +114,7 @@ class StringMatrixV2:
     self.height = h
     self.length = self.width * self.height
     self.data = array('u', c*self.length)
+    self.scale = 0
     return self
 
   def index_to_coo(self, n):
@@ -136,14 +149,14 @@ class StringMatrixV2:
     return self.data[self.coo_to_index(x, y)]
 
   def get_col(self, n):
-    if n >= self.height:
+    if n >= self.width:
       if self.strict:
         raise IndexError()
       return array('u', self.empty*self.height)
     return self.data[n::self.width]
 
   def get_row(self, n):
-    if n >= self.width:
+    if n >= self.height:
       if self.strict:
         raise IndexError()
       return array('u', self.empty*self.width)
@@ -156,7 +169,7 @@ class StringMatrixV2:
     octant += 2
     octant %= 8
     c = copysign(1, 4-octant) if octant % 4 != 0 else 0
-    return s, c
+    return int(s), int(c)
 
   def fetch_line(self, x, y, arr, octant=0, offset=0):
     n = len(arr)
@@ -181,6 +194,10 @@ class StringMatrixV2:
         offset = self.data.index(c, offset+1)
         indices[i] = self.index_to_coo(offset)
       return indices
+
+  def replace(self, c, repl):
+    for x, y in self.get_occurrences(c):
+      self.set_char(x, y, repl)
 
   def set_char(self, x, y, c):
     if self.check_oob_from_coo(x, y):
@@ -211,6 +228,43 @@ class StringMatrixV2:
   def iter_col(self):
     for n in range(self.width):
       yield n, self.get_col(n)
+
+  def pad_once(self):
+    for i in range(self.height, -1, -1):
+      for j in range(self.width-1, -1, -1):
+        self.data.insert(self.width * i, self.empty)
+    self.height *= 2
+    self.height += 1
+    for i in range(self.height, -1, -1):
+      for j in range(self.width, -1, -1):
+        self.data.insert(self.width * i + j, self.empty)
+    self.width *= 2
+    self.width += 1
+    self.length = self.width * self.height
+    self.scale += 1
+    return self
+
+  def flood_fill_indices(self, x, y):
+    frame = self.__class__('').from_empty(self.width, self.height, ' ')
+    search_queue = deque()
+    indices = list()
+    matrix_view = array('u', ' ')
+    frame_view = array('u', ' ')
+    curr_char = self.get_cell_from_coo(x, y)
+    search_queue.append((x, y))
+    while search_queue:
+      (x, y) = search_queue.pop()
+      indices.append(self.coo_to_index(x, y))
+      frame.set_char(x, y, '#')
+      for o in (0, 2, 4, 6):
+        ss, sc = self._octant_to_cosine_sign(o)
+        ix, iy = int(x+sc), int(y+ss)
+        self.fetch_line(x, y, matrix_view, o, 1)
+        frame.fetch_line(x, y, frame_view, o, 1)
+        if not ('#' in frame_view) and curr_char in matrix_view:
+          frame.set_char(ix, iy, '#')
+          search_queue.append((ix, iy))
+    return indices
 
   def __repr__(self):
     r = ''
