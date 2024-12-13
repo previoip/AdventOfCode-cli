@@ -74,20 +74,6 @@ class AOC(AOCBaseClass):
       if a[n] in b:
         yield n, b.index(a[n])
 
-  @staticmethod
-  def race(iter_1, iter_2):
-    try:
-      a1, b1 = next(iter_1)
-      a2, b2 = next(iter_2)
-      while True:
-        a1, b1 = next(iter_1)
-        a2, b2 = next(iter_2)
-        yield (a1, b1)
-    except IndexError:
-      pass
-
-
-
   def solution_part_1(self, parsed_input) -> t.Any:
     tok_price_a = 3
     tok_price_b = 1
@@ -99,7 +85,7 @@ class AOC(AOCBaseClass):
       for i, _ in self.ls_a_in_b(valid_x, valid_y):
         p_a, p_b = valid_x[i]
         print('   >>', p_a, p_b)
-        scores.append(p_a*tok_price_a + p_b*tok_price_b)
+        scores.append(p_a * tok_price_a + p_b * tok_price_b)
     print(scores)
     return sum(scores)
 
@@ -107,27 +93,28 @@ class AOC(AOCBaseClass):
   def solution_part_2(self, parsed_input) -> t.Any:
     tok_price_a = 3
     tok_price_b = 1
-    scores = list()
+    scores = dict()
     def offset_prize(n):
-      # return int('1{:013d}'.format(n))
-      return n 
+      # return n
+      return n + 10**13
 
     for n, butts in enumerate(parsed_input):
-      print('>>>', n)
+      print('>>>', n, offset_prize(butts.prize.x), offset_prize(butts.prize.y))
+      scores[n] = 0
       iter_x = self.iter_bivariant_roots(butts.button_a.x, butts.button_b.x, offset_prize(butts.prize.x))
       iter_y = self.iter_bivariant_roots(butts.button_a.y, butts.button_b.y, offset_prize(butts.prize.y))
       try:
+        ax, bx = next(iter_x)
+        ay, by = next(iter_y)
         while True:
-          ax, bx = next(iter_x)
-          ay, by = next(iter_y)
-          print('??', ax, bx, '|', ay, by) 
-
-          # while ax < ay:
-          #   ax, bx = next(iter_x)
-
+          while ax < ay:
+            ay, by = next(iter_y)
           if ax==ay and bx==by:
-            print('match:', ax, bx)
+            s = ax * tok_price_a + bx * tok_price_b
+            scores[n] = min(s, scores[n]) if scores[n] != 0 else s
+            print('match:', ax, bx, s)
+          ax, bx = next(iter_x)
       except StopIteration:
         pass
-    return sum(scores)
+    return sum(scores.values())
 
