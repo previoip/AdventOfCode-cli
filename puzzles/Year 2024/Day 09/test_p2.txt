@@ -1,19 +1,5 @@
 >>ans:
-foo
-bar
-baz
+2858
 >>input test:
-foo
-bar
-baz
-<<end!
-
->>ans:
-foo
-bar
-baz
->>inp test 2:
-foo
-bar
-blargh
+2333133121414131402
 <<end!

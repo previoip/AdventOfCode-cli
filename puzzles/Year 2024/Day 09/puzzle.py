@@ -2,7 +2,6 @@ import typing as t
 from io import IOBase
 from src.aoc.base_class import AOCBaseClass, AOCRunAsEnum
 
-
 class AOC(AOCBaseClass):
 
   # overridable methods:
@@ -57,10 +56,48 @@ class AOC(AOCBaseClass):
     self._lssw('tally', src, dst)
     self._lssw('index', src, dst)
 
-  def insert_null(self, i):
+  def _lsmv(self, attr, src, dst):
+    inst = getattr(self, attr)
+    temp = inst.pop(src)
+    inst.insert(dst, temp)
+
+  def move(self, src, dst):
+    print('moved', src, dst)
+    self._lsmv('disk_map', src, dst)
+    self._lsmv('tally', src, dst)
+    self._lsmv('index', src, dst)
+
+  def pop(self, i):
+    self.disk_map.pop(i)
+    self.tally.pop(i)
+    self.index.pop(i)
+
+  def insert_null(self, i, n):
     self.disk_map.insert(i, -1)
-    self.tally.insert(i, 0)
+    self.tally.insert(i, n)
     self.index.insert(i, -1)
+    self.length += 1
+    if i < self.r_cr:
+      self.r_cr += 1
+    if i < self.l_cr:
+      self.l_cr += 1
+
+  def defrag_nulls(self):
+    def predicate():
+      for i in range(1, self.length-1):
+        if self.index[i] < 0 and self.index[i+1] < 0:
+          return i
+      return -1
+
+    while True:
+      i = predicate()
+      if i < 0:
+        break
+      print('defragging nulls', i)
+      left = self.tally[i+1]
+      self.tally[i] += left
+      self.pop(i+1)
+      self.length -= 1
 
   @property
   def l_id(self):
@@ -86,8 +123,21 @@ class AOC(AOCBaseClass):
     return self.l_cr < 0 or self.l_cr >= self.length or self.r_cr < 0 or self.r_cr >= self.length
 
   def print_stat(self):
-    s = f'{self.counter:4d} | {self.checksum:4d} | {self.r_id} | {self.l_id} |'
-    _ = print(s, self.tally) if self.length < 50 else print(s)
+    s = f'{self.counter:04d}, cksum:{self.checksum:4d}, id(l):{self.l_id}, id(r):{self.r_id}, cu(l):{self.l_cr}, cu(r):{self.r_cr}, ta(l):{self.tally[self.l_cr]}, ta(r):{self.tally[self.r_cr]}'
+    if self.length < 50_000:
+      fmt = ('{:3d} |' * self.length)[:-2]
+      i = fmt.format(*range(self.length))
+      print(i)
+      print('-'*len(i))
+      print(fmt.format(*self.index))
+      print(fmt.format(*self.tally))
+      r = ''
+      for n in range(self.length):
+        r += ('.' if self.index[n] < 0 else chr(self.index[n]+48)) * self.tally[n]
+      print(r)
+    print()
+    print(s)
+    print()
 
   def solution_part_1(self, parsed_input) -> t.Any:
     while not self.out_of_bound():
@@ -109,6 +159,64 @@ class AOC(AOCBaseClass):
             self.tally[self.r_cr] -= 1
     return self.checksum
 
+  def search_lowest_left_tally(self):
+    for j in range(self.length-1, self.l_cr, -1):
+      if self.index[j] < 0:
+        continue
+      for i in range(self.tally[self.l_cr], 0, -1):
+        if self.tally[j] == i:
+          return j 
+    return None
+
+
+
   def solution_part_2(self, parsed_input) -> t.Any:
-    raise NotImplementedError('puzzle part 2 is not yet implemented')
-    return parsed_input
+    import time
+    runtime = 0
+    while not self.out_of_bound():    
+      runtime += 1
+      if runtime > 2:
+        break
+
+      for r_cr in set(reversed(self.index)):
+        self.print_stat()
+        time.sleep(.5)
+        if r_cr == -1:
+          continue
+        print(r_cr)
+        self.r_cr = self.index.index(r_cr)
+        if self.r_is_allocated:
+          for n in range(self.length):
+            if self.index[n] >= 0:
+              continue
+            elif self.tally[n] >= self.tally[self.r_cr]:
+              print('found candidate:', n)
+              size = self.tally[self.r_cr]
+              self.tally[n] -= size 
+              self.disk_map[n] -= size
+              self.move(self.r_cr, n)
+              self.insert_null(self.r_cr, size)
+              # self.defrag_nulls() 
+              self.r_cr -= 1
+              break
+          else:
+            self.r_cr -= 1
+        else:
+          self.r_cr -= 1
+        # r_cr_lw = self.search_lowest_left_tally()
+        # if r_cr_lw is None:
+        #   self.l_cr += 1
+        #   continue
+        # self.r_cr = r_cr_lw
+        # removed_block = self.tally[self.r_cr]
+        # self.move(self.r_cr, self.l_cr+1)
+        # self.insert_null(self.r_cr, removed_block)
+        # self.r_cr = self.l_cr + 1
+        # self.defrag_nulls()
+        # while self.tally[self.r_cr] > 0 and self.tally[self.l_cr] > 0:
+        #   self.tally[self.l_cr] -= 1
+        #   self.tally[self.r_cr] -= 1
+        #   self.add_checksum(self.r_id)
+        # if self.tally[self.l_cr] == 0:
+        #   self.l_cr += 1
+    return self.checksum
