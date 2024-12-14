@@ -244,7 +244,7 @@ class StringMatrixV2:
     self.scale += 1
     return self
 
-  def flood_fill_indices(self, x, y):
+  def flood_fill_indices(self, x, y, include_diag=False):
     frame = self.__class__('').from_empty(self.width, self.height, ' ')
     search_queue = deque()
     indices = list()
@@ -252,11 +252,12 @@ class StringMatrixV2:
     frame_view = array('u', ' ')
     curr_char = self.get_cell_from_coo(x, y)
     search_queue.append((x, y))
+    views = (0, 1, 2, 3, 4, 5, 6, 7) if include_diag else (0, 2, 4, 6)
     while search_queue:
       (x, y) = search_queue.pop()
       indices.append(self.coo_to_index(x, y))
       frame.set_char(x, y, '#')
-      for o in (0, 2, 4, 6):
+      for o in views:
         ss, sc = self._octant_to_cosine_sign(o)
         ix, iy = int(x+sc), int(y+ss)
         self.fetch_line(x, y, matrix_view, o, 1)
